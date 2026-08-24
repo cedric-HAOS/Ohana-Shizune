@@ -1,0 +1,42 @@
+name: OhanaShizune
+options:
+  bundleIdPrefix: fr.ohana
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  OhanaShizune:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shizune
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.ohana.Shizune
+        PRODUCT_NAME: Shizune
+        CODE_SIGN_ENTITLEMENTS: Shizune/Shizune.entitlements
+        INFOPLIST_FILE: Shizune/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        Debug:
+          APS_ENVIRONMENT: development
+        Release:
+          APS_ENVIRONMENT: production
+    scheme:
+      testTargets:
+        - OhanaShizuneTests
+  OhanaShizuneTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ShizuneTests
+    dependencies:
+      - target: OhanaShizune
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
