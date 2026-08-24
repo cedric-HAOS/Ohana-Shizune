@@ -1,0 +1,65 @@
+name: Sideload
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-unsigned-ipa:
+    name: Build unsigned IPA
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate the Xcode project
+        run: xcodegen generate
+
+      - name: Build Shizune for a physical iPhone without signing
+        run: |
+          xcodebuild build \
+            -project OhanaShizune.xcodeproj \
+            -scheme OhanaShizune \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS=""
+
+      - name: Package unsigned IPA for AltStore
+        run: |
+          APP_PATH="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/Shizune.app"
+
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Shizune.app was not found at: $APP_PATH"
+            find "$RUNNER_TEMP/DerivedData/Build/Products" -maxdepth 3 -type d -name '*.app' -print || true
+            exit 1
+          fi
+
+          rm -rf "$RUNNER_TEMP/Payload"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          ditto "$APP_PATH" "$RUNNER_TEMP/Payload/Shizune.app"
+
+          cd "$RUNNER_TEMP"
+          /usr/bin/zip -qry Shizune-sideload.ipa Payload
+
+          echo "IPA created:"
+          ls -lh "$RUNNER_TEMP/Shizune-sideload.ipa"
+
+      - name: Upload Shizune IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shizune-sideload
+          path: ${{ runner.temp }}/Shizune-sideload.ipa
+          if-no-files-found: error
+          retention-days: 14
