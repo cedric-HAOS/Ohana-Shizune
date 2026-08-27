@@ -2,6 +2,15 @@
 
 Toutes les évolutions importantes d’Ohana-Shizune sont documentées ici.
 
+## [0.2.2] — Compagnon mobile recentré — 2026-08-27
+
+### Corrigé
+
+- retrait des commandes d’investigation, peu adaptées à une utilisation depuis
+  l’iPhone ;
+- maintien de la santé synthétique, de l’activité et des décisions Tsunade sans
+  voie d’exécution directe.
+
 ## [0.2.1] — Suggestions Tsunade — 2026-08-27
 
 ### Ajouté

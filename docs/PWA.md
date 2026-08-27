@@ -33,9 +33,6 @@ une seule fois son jeton compagnon et le conserve dans IndexedDB.
 Les écrans Accueil, Activité et Décisions lisent ensuite la synthèse bornée de
 Tsunade. Les réponses restent limitées aux choix fournis par Agent ; aucune
 commande libre, configuration ou donnée technique sensible n’est exposée.
-Tsunade peut toutefois fournir des commandes d’investigation en lecture seule,
-présentées comme texte copiable et toujours exécutées manuellement par
-l’utilisateur.
 
 ## Déploiement futur
 

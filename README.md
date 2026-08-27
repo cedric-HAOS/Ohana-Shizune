@@ -28,7 +28,6 @@ propose « Installer Shizune » ou « Ajouter à l’écran d’accueil ».
 - état général de Konoha : stable, dégradé ou critique ;
 - synthèse et décisions réelles fournies par Tsunade ;
 - activité récente synthétique ;
-- suggestions d’investigation en lecture seule, copiables manuellement ;
 - liste des incidents critiques ;
 - navigation Accueil, Activité, Décisions et Profil ;
 - icône officielle Ohana ;
@@ -63,8 +62,8 @@ directe. Le flux conserve les responsabilités existantes :
 Tsunade orchestre, Agent valide et exécute, puis Shikamaru vérifie.
 
 La PWA ne doit recevoir que des données synthétiques : santé de Konoha,
-demandes Tsunade, activité bornée, suggestions copiables et réponses
-structurées. Elle ne doit jamais recevoir de journaux complets, de contrats
+demandes Tsunade, activité bornée et réponses structurées. Elle ne doit jamais
+recevoir de journaux complets, de contrats
 d’administration, de secrets Agent/Vision ou d’accès direct aux équipements.
 
 Le déploiement HTTP suppose explicitement un réseau de confiance : Wi-Fi
