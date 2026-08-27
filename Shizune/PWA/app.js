@@ -5,7 +5,7 @@ const DEVICE_ID_KEY = 'ohana-shizune-device-id';
 
 const state = {
   view: 'home', deviceId: null, token: null, pairing: null,
-  summary: null, requests: [], activity: [], loading: true, error: null,
+  summary: null, requests: [], activity: [], suggestions: [], loading: true, error: null,
 };
 
 const escapeHtml = value => String(value ?? '')
@@ -112,6 +112,25 @@ const activityRows = items => items.length
   ? items.map(item => `<div class="activity-row"><span>${item.kind === 'result' ? '✓' : '⌁'}</span><span>${escapeHtml(item.title)}${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}</span><time>${formatDate(item.occurred_at)}</time></div>`).join('')
   : '<div class="empty compact">Aucune activité récente.</div>';
 
+const encodeCommand = command => btoa(unescape(encodeURIComponent(command)));
+
+const suggestionCards = items => items.length
+  ? items.map(item => `<section class="section suggestion">
+      <h2 class="section-title"><span class="section-icon">⌁</span>Suggestion Tsunade</h2>
+      <p>${escapeHtml(item.title)}</p>
+      <small>${escapeHtml(item.detail)} · ${formatDate(item.occurred_at)}</small>
+      ${(item.commands ?? []).map(command => {
+        const commandText = String(command.command ?? '');
+        return `<article class="suggestion-command">
+          <header><strong>${escapeHtml(command.title)}</strong><span>${escapeHtml(command.safety)} · ${escapeHtml(command.target)}</span></header>
+          <p>${escapeHtml(command.expected)}</p>
+          <pre><code>${escapeHtml(commandText)}</code></pre>
+          <button class="inline-secondary" data-action="copy-command" data-command="${escapeHtml(encodeCommand(commandText))}">Copier la commande</button>
+        </article>`;
+      }).join('')}
+    </section>`).join('')
+  : '<section class="section suggestion"><h2 class="section-title">Suggestions Tsunade</h2><div class="empty compact">Aucune commande proposée.</div></section>';
+
 const requestCard = request => `<section class="section decision">
   <h2 class="section-title"><span class="section-icon">⚖</span>Décision requise</h2>
   <div class="decision-copy"><span class="shield">♢</span><div><p>${escapeHtml(request.question)}</p><small>${escapeHtml(request.context)}</small></div></div>
@@ -129,6 +148,7 @@ const home = () => {
     <section class="section"><h2 class="section-title">État général</h2><div class="health ${className}"><div class="health-badge">${symbol}</div><div><h2>${label}</h2><p>${escapeHtml(state.summary.tsunade_message)}<br>Dernière analyse : ${formatDate(state.summary.last_checked_at)}</p></div></div></section>
     <section class="section"><h2 class="section-title"><span class="section-icon">◉</span>Tsunade</h2><div class="message"><div class="avatar"><img src="./tsunade.png" alt="Tsunade" /></div><div><strong>${escapeHtml(state.summary.tsunade_message)}</strong></div></div></section>
     ${request ? requestCard(request) : ''}
+    ${state.suggestions.length ? suggestionCards(state.suggestions.slice(0, 1)) : ''}
     <section class="section"><h2 class="section-title"><span class="section-icon">⌁</span>Activité récente</h2><div class="activity-list">${activityRows(state.activity.slice(0, 4))}</div></section>
     <section class="section incident"><h2 class="section-title"><span>♧</span>Incidents</h2><div class="message"><span class="health-badge small">${state.summary.attention?.length ? '!' : '✓'}</span><p>${state.summary.attention?.length ? `${state.summary.attention.length} incident(s) nécessitent une attention` : 'Aucun incident actif'}</p></div></section>`;
 };
@@ -151,18 +171,19 @@ const render = () => {
   }
   if (state.view === 'home') app.innerHTML = home();
   else if (state.view === 'activity') app.innerHTML = state.token ? `<section class="section"><h2 class="section-title">Activité récente</h2><div class="activity-list">${activityRows(state.activity)}</div></section>` : connectionRequired();
-  else if (state.view === 'decisions') app.innerHTML = state.token ? (state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Décisions requises</h2><div class="empty">Tsunade n’a aucune demande en attente.</div></section>') : connectionRequired();
+  else if (state.view === 'decisions') app.innerHTML = state.token ? `${state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Décisions requises</h2><div class="empty">Tsunade n’a aucune demande en attente.</div></section>'}${suggestionCards(state.suggestions)}` : connectionRequired();
   else app.innerHTML = profile();
 };
 
 const loadDashboard = async () => {
   if (!state.token) return;
-  const [summary, requests, activity] = await Promise.all([
-    apiRequest('/summary'), apiRequest('/requests'), apiRequest('/activity'),
+  const [summary, requests, activity, suggestions] = await Promise.all([
+    apiRequest('/summary'), apiRequest('/requests'), apiRequest('/activity'), apiRequest('/suggestions'),
   ]);
   state.summary = summary;
   state.requests = Array.isArray(requests.requests) ? requests.requests : [];
   state.activity = Array.isArray(activity.activity) ? activity.activity : [];
+  state.suggestions = Array.isArray(suggestions.suggestions) ? suggestions.suggestions : [];
 };
 
 const refresh = async () => {
@@ -230,12 +251,21 @@ const respond = async button => {
   }
 };
 
+const copyCommand = async button => {
+  const command = decodeURIComponent(escape(atob(button.dataset.command ?? '')));
+  await navigator.clipboard.writeText(command);
+  const previous = button.textContent;
+  button.textContent = 'Commande copiée';
+  setTimeout(() => { button.textContent = previous; }, 1600);
+};
+
 document.querySelector('#app').addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   if (button.dataset.action === 'pair') await startPairing();
   else if (button.dataset.action === 'poll') await pollPairing();
   else if (button.dataset.action === 'respond') await respond(button);
+  else if (button.dataset.action === 'copy-command') await copyCommand(button);
   else if (button.dataset.action === 'refresh') await refresh();
   else if (button.dataset.action === 'forget') {
     await vaultDelete('companion-token');
@@ -243,6 +273,7 @@ document.querySelector('#app').addEventListener('click', async event => {
     state.summary = null;
     state.requests = [];
     state.activity = [];
+    state.suggestions = [];
     render();
   }
 });

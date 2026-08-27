@@ -23,6 +23,7 @@ Le listener compagnon expose uniquement :
 - la santé synthétique de Konoha ;
 - les demandes Tsunade encore ouvertes ;
 - l’activité récente bornée ;
+- les suggestions d’investigation copiable, sans exécution directe ;
 - les réponses structurées aux demandes ;
 - la révocation de la session.
 

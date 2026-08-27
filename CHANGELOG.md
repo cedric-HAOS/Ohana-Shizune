@@ -2,6 +2,18 @@
 
 Toutes les évolutions importantes d’Ohana-Shizune sont documentées ici.
 
+## [0.2.1] — Suggestions Tsunade — 2026-08-27
+
+### Ajouté
+
+- affichage des suggestions d'investigation transmises par Tsunade ;
+- copie manuelle des commandes en lecture seule, sans exécution depuis Shizune.
+
+### Sécurité
+
+- Shizune ne reçoit pas les hypothèses brutes et ne contourne pas Agent/Tsunade
+  pour agir sur l'infrastructure.
+
 ## [0.2.0] — Connexion à Tsunade — 2026-08-27
 
 ### Ajouté
