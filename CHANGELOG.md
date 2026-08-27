@@ -2,19 +2,18 @@
 
 Toutes les évolutions importantes d’Ohana-Shizune sont documentées ici.
 
-## [0.1.0] — Première application compagnon — 2026-08-24
+## [0.1.0] — Beta PWA — 2026-08-27
 
 ### Ajouté
 
-- état synthétique de Konoha, demandes Tsunade et activité récente bornée ;
-- association explicite par code et comparaison d’empreinte TLS dans Vision ;
-- session révocable conservée dans le trousseau sécurisé de l’iPhone ;
-- réponses transmises exclusivement à Tsunade via Agent ;
-- notifications APNs natives facultatives, indépendantes de Home Assistant ;
-- identité visuelle Ohana, manifeste de confidentialité et préparation TestFlight.
+- interface PWA mobile inspirée de la maquette Shizune ;
+- état synthétique de Konoha, demande Tsunade et activité récente ;
+- navigation Accueil, Activité, Décisions et Profil ;
+- manifest PWA et service worker pour l’installation et les ressources hors ligne ;
+- icône officielle Ohana et portrait de Tsunade de la maquette.
 
 ### Sécurité
 
-- aucune route directe vers Katsuyu, Home Assistant ou les équipements ;
-- HTTPS obligatoire et autorité Konoha épinglée après validation utilisateur ;
-- aucune donnée brute de Vision ni aucun journal complet reçu par l’application.
+- la Beta utilise uniquement des données locales de démonstration ;
+- aucun accès direct à Katsuyu, Home Assistant ou aux équipements ;
+- le futur branchement API devra conserver Agent comme point de validation et d’exécution.

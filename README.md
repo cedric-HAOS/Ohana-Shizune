@@ -1,48 +1,75 @@
-# Ohana-Shizune
+# Shizune
 
-Shizune est l’application compagnon personnelle de Konoha. Elle répond à trois
-questions : l’infrastructure est-elle saine, Tsunade attend-elle une décision,
-et que s’est-il passé récemment ?
+Shizune est la PWA compagnon personnelle de Konoha. Elle donne une vue courte
+et lisible de l’état de l’infrastructure, des décisions en attente de Tsunade
+et de l’activité récente.
 
-Elle ne remplace pas Ohana-Vision et ne possède aucun accès direct aux services,
-à Katsuyu ou aux équipements. Toute réponse revient à Tsunade ; Agent applique
-ensuite la même liste d’autorisations et la même protection contre les actions
-concurrentes que pour Vision.
+La Beta actuelle est une interface autonome avec données de démonstration. Elle
+valide l’expérience mobile et la hiérarchie de l’information avant le
+branchement du listener Shizune réel.
 
-## MVP
+## Démarrer la Beta
 
-- accueil synthétique `SAIN`, `DÉGRADÉ` ou `CRITIQUE` ;
-- demandes Tsunade et réponses structurées ;
-- activité récente bornée ;
-- association explicite par code court ;
-- secret conservé dans le trousseau iOS ;
-- HTTPS avec empreinte de l’autorité Konoha ;
-- notifications natives APNs, indépendantes de Home Assistant ;
-- fonctionnement local ou à distance via WireGuard.
+Depuis la racine du dépôt :
 
-## Ouvrir le projet
-
-Le projet est décrit par `project.yml` afin d’éviter un fichier Xcode généré et
-fragile. Sur un Mac équipé de Xcode et de XcodeGen :
-
-```bash
-brew install xcodegen
-xcodegen generate
-open OhanaShizune.xcodeproj
+```powershell
+python -m http.server 8000 --bind 127.0.0.1 --directory Shizune/PWA
 ```
 
-Sélectionner ensuite l’équipe Apple Developer et activer l’App ID
-`fr.ohana.Shizune` avec la capacité Push Notifications. L’installation finale
-sera distribuée par TestFlight ; l’utilisateur n’aura pas besoin de Xcode.
+Ouvrir ensuite <http://127.0.0.1:8000> dans un navigateur moderne. Le serveur
+HTTP local est nécessaire pour que le manifest et le service worker soient
+traités correctement.
 
-La compilation continue vérifie le projet sur un simulateur iOS. Le workflow
-manuel TestFlight et les secrets Apple nécessaires sont décrits dans
-[`docs/TESTFLIGHT.md`](docs/TESTFLIGHT.md).
+La PWA peut ensuite être installée depuis le menu du navigateur lorsqu’il
+propose « Installer Shizune » ou « Ajouter à l’écran d’accueil ».
 
-## Notifications
+## Contenu de la Beta
 
-Agent communique directement avec APNs. La clé Apple `.p8` reste uniquement sur
-INFRA-01. Shizune transmet son jeton APNs après l’association ; ce jeton est lié
-à la session compagnon révocable. Une panne d’APNs ou d’Internet ne bloque
-jamais Agent, Tsunade, les réparations ou les sauvegardes : la demande demeure
-consultable dans l’application lors de sa prochaine synchronisation.
+- état général de Konoha : stable, dégradé ou critique ;
+- carte Tsunade avec rapport et décision requise ;
+- activité récente synthétique ;
+- liste des incidents critiques ;
+- navigation Accueil, Activité, Décisions et Profil ;
+- icône officielle Ohana ;
+- fonctionnement hors ligne des ressources de l’interface après une première
+  ouverture.
+
+Les actions de la Beta modifient uniquement l’état visuel local. Elles ne
+transmettent encore aucune réponse à Konoha.
+
+## Organisation
+
+```text
+Shizune/
+└── PWA/
+    ├── index.html
+    ├── app.js
+    ├── styles.css
+    ├── manifest.webmanifest
+    ├── sw.js
+    ├── icon.svg
+    └── tsunade.png
+```
+
+## Principes de sécurité
+
+Shizune ne remplace pas Ohana-Vision et ne possède pas de route d’exécution
+directe. Le futur flux devra conserver les responsabilités existantes :
+Tsunade orchestre, Agent valide et exécute, puis Shikamaru vérifie.
+
+La PWA ne doit recevoir que des données synthétiques : santé de Konoha,
+demandes Tsunade, activité bornée et réponses structurées. Elle ne doit jamais
+recevoir de journaux complets, de contrats d’administration, de secrets
+Agent/Vision ou d’accès direct aux équipements.
+
+## Suite prévue
+
+1. valider visuellement la Beta sur mobile ;
+2. définir le contrat HTTP PWA du listener Shizune ;
+3. implémenter l’association et la session côté navigateur ;
+4. remplacer les données de démonstration par la lecture de l’état réel ;
+5. connecter les réponses structurées de Tsunade avec confirmation explicite ;
+6. ajouter les tests de sécurité et de régression du parcours complet.
+
+Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
+[docs/TEST-PLAN.md](docs/TEST-PLAN.md) et [docs/PWA.md](docs/PWA.md).

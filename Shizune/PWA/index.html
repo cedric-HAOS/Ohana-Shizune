@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#fbfaf8" />
+    <meta name="description" content="Shizune, compagnon personnel de Konoha" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Shizune · Konoha</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <img src="./icon.svg" alt="" class="brand-mark" />
+          <div><h1>Shizune</h1><p>Compagnon personnel de Konoha</p></div>
+        </div>
+        <button class="icon-button" aria-label="Notifications" title="Notifications"><span class="bell">♧</span><i></i></button>
+      </header>
+
+      <main id="app" aria-live="polite"></main>
+
+      <nav class="bottom-nav" aria-label="Navigation principale">
+        <button class="nav-item active" data-view="home"><span>⌂</span><small>Accueil</small></button>
+        <button class="nav-item" data-view="activity"><span>⌁</span><small>Activité</small></button>
+        <button class="nav-item" data-view="decisions"><span>⚖</span><small>Décisions</small></button>
+        <button class="nav-item" data-view="profile"><span>♙</span><small>Profil</small></button>
+      </nav>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

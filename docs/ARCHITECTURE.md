@@ -1,46 +1,50 @@
-# Architecture Shizune MVP
+# Architecture de Shizune
+
+## Rôle
+
+Shizune est une PWA de consultation et de décision limitée. Elle présente une
+synthèse destinée à l’utilisateur, sans devenir un panneau d’administration.
 
 ```text
-Shikamaru -> Tsunade -> demande durable -> Shizune
-                                      réponse |
-                                              v
-                     Agent valide -> exécute -> Shikamaru vérifie
-                                              |
-                                              v
-                                           Shizune
+Shikamaru -> Tsunade -> demande durable -> Shizune PWA
+                                      réponse structurée |
+                                                         v
+                              Agent valide -> exécute -> Shikamaru vérifie
+                                                         |
+                                                         v
+                                                   nouvel état synthétique
 ```
 
-## Frontière de sécurité
+## Périmètre autorisé
 
-Shizune utilise un listener HTTPS distinct et limité. Ce listener ne route que :
+Le futur listener compagnon ne doit exposer que :
 
-- l’association d’un compagnon ;
+- l’association d’une PWA ;
 - la santé synthétique de Konoha ;
-- les demandes Tsunade ;
-- l’activité synthétique ;
-- les réponses structurées ;
-- l’enregistrement du jeton APNs.
+- les demandes Tsunade encore ouvertes ;
+- l’activité récente bornée ;
+- les réponses structurées aux demandes ;
+- la révocation de la session.
 
-Il ne route jamais les contrats de configuration, jobs, investigations libres,
-journaux, sauvegardes ou opérations système. Le jeton d’administration Vision
-n’est jamais copié sur l’iPhone.
+Il ne doit pas exposer les contrats de configuration, les jobs, les
+investigations libres, les journaux complets, les sauvegardes, les opérations
+système ou les équipements.
 
-L’association reprend le mécanisme éprouvé de Katsuyu : secret de sondage,
-code court à comparer dans Vision, approbation explicite et remise unique du
-jeton. La variante compagnon ajoute expiration, révocation et stockage Keychain.
+## Session et navigateur
 
-## Notifications natives
+Le protocole d’association devra utiliser un code court à comparer dans Vision,
+une approbation explicite, une expiration et une remise unique du secret. Le
+secret de session devra être protégé par les mécanismes adaptés au navigateur
+et ne devra jamais être écrit dans les données de démonstration, les logs ou
+les URLs.
 
-Agent est le fournisseur APNs de Shizune. Il utilise une clé Apple `.p8` et
-HTTP/2/TLS, seulement lorsqu’un événement pertinent doit être transmis. Aucune
-connexion APNs permanente n’est maintenue au repos. Les événements admis sont :
+La PWA fonctionne d’abord sur le réseau local ou via WireGuard. HTTPS est
+requis pour le déploiement réel. Le service worker ne met en cache que les
+ressources statiques de l’interface ; les réponses API privées ne doivent pas
+être placées dans le cache public.
 
-- `ATTENTION` ;
-- `DECISION_REQUIRED` ;
-- `CRITICAL` ;
-- `RESOLVED` ;
-- `INFORMATION` lorsqu’elle présente un intérêt utilisateur explicite.
+## Notifications
 
-La notification n’est jamais une source de vérité. La demande durable Tsunade
-reste dans Agent jusqu’à sa réponse, son expiration, son annulation ou la
-résolution de l’incident.
+La Beta ne met pas encore en œuvre de notifications. Lorsqu’elles seront
+ajoutées, elles devront rester informatives : la notification ne sera jamais la
+source de vérité et la demande durable restera consultable auprès d’Agent.

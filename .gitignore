@@ -1,6 +1,5 @@
 .DS_Store
-DerivedData/
-build/
-*.xcuserstate
-xcuserdata/
-OhanaShizune.xcodeproj/
+node_modules/
+dist/
+coverage/
+.cache/

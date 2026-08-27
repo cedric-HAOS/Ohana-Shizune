@@ -1,20 +1,40 @@
-# Plan de validation iPhone
+# Plan de validation de la PWA
 
-Les tests Python Agent couvrent l’appairage, le refus d’authentification,
-l’expiration, la révocation, l’enregistrement APNs, l’isolation des routes,
-la réponse structurée et l’absence de double exécution.
+## Beta locale
 
-Les tests Xcode couvrent le décodage des contrats synthétiques et la persistance
-de la session épinglée. Avant une première diffusion TestFlight, exécuter aussi
-sur un véritable iPhone :
+Depuis la racine du dépôt :
 
-1. association locale et via WireGuard ;
-2. certificat Konoha incorrect ;
-3. session révoquée et expirée ;
-4. états sain, dégradé et critique ;
-5. autorisation, refus et report ;
-6. réponse concurrente depuis Vision ;
-7. fermeture complète de Shizune puis réception APNs ;
-8. Home Assistant arrêté pendant une notification ;
-9. Internet/APNs indisponible puis synchronisation manuelle ;
-10. vérification qu’aucune route système n’est joignable avec le jeton compagnon.
+```powershell
+node --check Shizune/PWA/app.js
+git diff --check
+python -m http.server 8000 --bind 127.0.0.1 --directory Shizune/PWA
+```
+
+Dans le navigateur :
+
+1. vérifier l’affichage mobile de l’accueil ;
+2. vérifier la présence de l’icône officielle et du nom Shizune ;
+3. ouvrir Activité, Décisions et Profil ;
+4. tester Plus tard, Voir, Refuser et Autoriser ;
+5. recharger la page et vérifier que les ressources se chargent ;
+6. vérifier l’absence d’erreur dans la console.
+
+## Avant branchement API
+
+- confirmer le schéma JSON des résumés, demandes et activités ;
+- confirmer les états et choix autorisés par Tsunade ;
+- vérifier qu’aucun payload technique ou secret n’est inclus ;
+- définir les erreurs de session expirée, révoquée et indisponible ;
+- tester une réponse concurrente et garantir l’idempotence côté Agent.
+
+## Après branchement API
+
+- association locale et via WireGuard ;
+- certificat ou autorité Konoha incorrect ;
+- session expirée et révoquée ;
+- états sain, dégradé et critique ;
+- demandes expirées, reportées et déjà traitées ;
+- réponse concurrente depuis Vision ;
+- Konoha indisponible puis resynchronisation ;
+- service worker sans mise en cache des réponses privées ;
+- aucune route système accessible avec la session compagnon.
