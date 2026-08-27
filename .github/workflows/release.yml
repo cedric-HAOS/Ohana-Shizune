@@ -1,0 +1,50 @@
+name: Shizune PWA release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version SemVer de la PWA, par exemple 0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            version="${{ inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          test "$version" = "$(node -p "require('./Shizune/PWA/version.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build PWA archive
+        shell: bash
+        run: |
+          archive="shizune-pwa-${{ steps.version.outputs.version }}.tar.gz"
+          tar -czf "$archive" -C Shizune/PWA .
+          sha256sum "$archive" > SHA256SUMS
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            "shizune-pwa-${{ steps.version.outputs.version }}.tar.gz" \
+            SHA256SUMS \
+            --title "Shizune ${{ steps.version.outputs.version }}" \
+            --generate-notes
