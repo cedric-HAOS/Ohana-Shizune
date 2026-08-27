@@ -17,7 +17,7 @@ Shikamaru -> Tsunade -> demande durable -> Shizune PWA
 
 ## Périmètre autorisé
 
-Le futur listener compagnon ne doit exposer que :
+Le listener compagnon expose uniquement :
 
 - l’association d’une PWA ;
 - la santé synthétique de Konoha ;
@@ -32,16 +32,26 @@ système ou les équipements.
 
 ## Session et navigateur
 
-Le protocole d’association devra utiliser un code court à comparer dans Vision,
+Le protocole d’association utilise un code court à comparer dans Vision,
 une approbation explicite, une expiration et une remise unique du secret. Le
 secret de session devra être protégé par les mécanismes adaptés au navigateur
 et ne devra jamais être écrit dans les données de démonstration, les logs ou
 les URLs.
 
-La PWA fonctionne d’abord sur le réseau local ou via WireGuard. HTTPS est
-requis pour le déploiement réel. Le service worker ne met en cache que les
-ressources statiques de l’interface ; les réponses API privées ne doivent pas
-être placées dans le cache public.
+La PWA appelle une passerelle de même origine fournie par Vision. Cette
+passerelle ne conserve aucun secret et ne relaie que le contrat synthétique du
+listener compagnon Agent/Tsunade. Vision vérifie le certificat privé d’Agent à
+l’aide de la CA provisionnée par Installer. Le jeton compagnon reste dans
+IndexedDB sur l’iPhone et n’est transmis qu’en en-tête d’authentification.
+
+Le lien iPhone vers Vision fonctionne en HTTP dans le périmètre de confiance
+retenu : Wi-Fi domestique ou WireGuard. Ce choix ne fournit pas de chiffrement
+applicatif du jeton au repos et suppose que le LAN et ses équipements sont
+maîtrisés. La session reste révocable depuis Vision.
+
+Lorsqu’un contexte sécurisé est disponible, le service worker ne met en cache
+que les ressources statiques. En HTTP, il n’est pas enregistré. Les réponses
+`/api/` restent systématiquement en mode réseau et `no-store`.
 
 ## Notifications
 

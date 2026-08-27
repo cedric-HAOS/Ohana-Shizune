@@ -23,15 +23,20 @@ un autre port et conserver `--bind 127.0.0.1`.
 - `tsunade.png` : portrait utilisé dans la maquette Beta ;
 - `version.json` : version machine-readable de Shizune.
 
-## Données de démonstration
+## Connexion à Tsunade
 
-Les données sont définies dans `app.js` et ne représentent pas l’état réel de
-Konoha. Toute intégration API devra remplacer cette source par un client dédié,
-avec validation stricte des réponses et gestion explicite des erreurs.
+La PWA utilise la passerelle de même origine `/api/shizune` exposée par Vision.
+Depuis **Profil**, l’utilisateur crée une demande d’association, compare le code
+et l’empreinte TLS dans Vision, puis approuve l’iPhone. Shizune récupère alors
+une seule fois son jeton compagnon et le conserve dans IndexedDB.
+
+Les écrans Accueil, Activité et Décisions lisent ensuite la synthèse bornée de
+Tsunade. Les réponses restent limitées aux choix fournis par Agent ; aucune
+commande libre, configuration ou donnée technique n’est exposée.
 
 ## Déploiement futur
 
-Le déploiement réel devra servir la PWA en HTTPS avec les en-têtes adaptés au
-service worker. Les endpoints API devront être séparés des ressources statiques
-et ne devront pas être ajoutés au cache hors ligne. La publication, le domaine
-et la mise en production restent des décisions distinctes de cette Beta locale.
+Le déploiement retenu sert Vision et Shizune en HTTP, exclusivement sur le
+Wi-Fi domestique ou via WireGuard. Les réponses privées ne sont jamais ajoutées
+au cache hors ligne. Le service worker reste désactivé en HTTP conformément aux
+règles du navigateur.

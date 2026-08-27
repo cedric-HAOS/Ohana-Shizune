@@ -2,6 +2,22 @@
 
 Toutes les évolutions importantes d’Ohana-Shizune sont documentées ici.
 
+## [0.2.0] — Connexion à Tsunade — 2026-08-27
+
+### Ajouté
+
+- association de l’iPhone approuvée depuis Vision ;
+- lecture de la santé synthétique, des demandes et de l’activité Tsunade ;
+- réponses structurées Autoriser, Refuser et Plus tard ;
+- conservation locale du jeton compagnon dans IndexedDB.
+
+### Sécurité
+
+- appels privés de même origine via la passerelle bornée de Vision ;
+- exclusion explicite de toutes les réponses `/api/` du cache PWA ;
+- mode HTTP limité au Wi-Fi de confiance ou à WireGuard ;
+- service worker désactivé automatiquement hors contexte sécurisé.
+
 ## [0.1.0] — Beta PWA — 2026-08-27
 
 ### Ajouté
