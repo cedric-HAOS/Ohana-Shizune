@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.3] — 2026-09-11 — L’essentiel et les prochaines étapes
+
+- L’accueil présente le problème prioritaire et une synthèse des autres sujets.
+- Chaque incident dispose d’une fiche : constat, conclusion datée, prochaine
+  étape, demande de diagnostic et accès au dossier Vision.
+- Les autorisations attendues sont distinctes des incidents actifs ; le contrôle
+  réussi ne devient plus un faux « Konoha : OK ».
+- Actualisation périodique lorsque la page est visible, sans interrompre une
+  réponse ou une demande de diagnostic.
+
 Toutes les évolutions importantes d’Ohana-Shizune sont documentées ici.
 
 ## [0.2.2] — Compagnon mobile recentré — 2026-08-27

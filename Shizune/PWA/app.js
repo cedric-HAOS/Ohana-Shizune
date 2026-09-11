@@ -6,11 +6,14 @@ const DEVICE_ID_KEY = 'ohana-shizune-device-id';
 const state = {
   view: 'home', deviceId: null, token: null, pairing: null,
   summary: null, requests: [], activity: [], loading: true, error: null,
+  incidentId: null, notice: null, busy: false,
 };
 
 const escapeHtml = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
+const countLabel = (count, singular, plural) => `${count} ${count === 1 ? singular : plural}`;
 
 const openVault = () => new Promise((resolve, reject) => {
   const request = indexedDB.open(DATABASE_NAME, 1);
@@ -123,14 +126,51 @@ const connectionRequired = () => `<section class="section"><h2 class="section-ti
 const home = () => {
   if (!state.token) return connectionRequired();
   if (!state.summary) return '<section class="section"><div class="empty">Synchronisation avec Tsunade…</div></section>';
-  const [label, symbol, className] = healthPresentation(state.summary);
-  const request = state.requests[0];
+  const incidents = state.summary.attention ?? [];
+  const priority = incidents.filter(item => !['watch', 'resolved'].includes(item.assessment?.state));
+  const first = priority[0];
+  const remaining = incidents.filter(item => item !== first);
+  const stale = remaining.filter(item => item.assessment?.state === 'stale').length;
+  const analyzing = remaining.filter(item => item.assessment?.state === 'analyzing').length;
+  const watching = remaining.filter(item => item.assessment?.state === 'watch').length;
+  const groupSummary = [stale ? `${countLabel(stale, 'analyse', 'analyses')} à actualiser` : '', analyzing ? `${countLabel(analyzing, 'analyse', 'analyses')} en cours ou en attente` : '', watching ? `${countLabel(watching, 'équipement', 'équipements')} sous surveillance` : ''].filter(Boolean).join(' · ');
+  const headline = first ? 'Ce qui demande votre attention'
+    : incidents.length ? 'Tsunade poursuit la surveillance' : 'Aucun incident actif signalé';
   return `
-    <section class="section"><h2 class="section-title">État général</h2><div class="health ${className}"><div class="health-badge">${symbol}</div><div><h2>${label}</h2><p>${escapeHtml(state.summary.tsunade_message)}<br>Dernière analyse : ${formatDate(state.summary.last_checked_at)}</p></div></div></section>
-    <section class="section"><h2 class="section-title"><span class="section-icon">◉</span>Tsunade</h2><div class="message"><div class="avatar"><img src="./tsunade.png" alt="Tsunade" /></div><div><strong>${escapeHtml(state.summary.tsunade_message)}</strong></div></div></section>
-    ${request ? requestCard(request) : ''}
-    <section class="section"><h2 class="section-title"><span class="section-icon">⌁</span>Activité récente</h2><div class="activity-list">${activityRows(state.activity.slice(0, 4))}</div></section>
-    <section class="section incident"><h2 class="section-title"><span>♧</span>Incidents</h2><div class="message"><span class="health-badge small">${state.summary.attention?.length ? '!' : '✓'}</span><p>${state.summary.attention?.length ? `${state.summary.attention.length} incident(s) nécessitent une attention` : 'Aucun incident actif'}</p></div></section>`;
+    <header class="essential-heading"><p>L’ESSENTIEL</p><h2>${headline}</h2></header>
+    ${state.requests.length ? `<section class="section decision"><h2>${countLabel(state.requests.length, 'décision en attente', 'décisions en attente')}</h2><button class="inline-primary" data-action="decisions">Voir les demandes</button></section>` : ''}
+    ${first ? incidentCard(first, true) : ''}
+    ${remaining.length ? `<section class="section"><h2 class="section-title">${countLabel(remaining.length, 'autre sujet suivi', 'autres sujets suivis')}</h2><p>${escapeHtml(groupSummary || 'Les derniers constats et prochaines étapes sont disponibles.')}</p><button class="inline-secondary" data-action="incidents">Voir les équipements →</button></section>` : ''}
+    ${state.summary.attention_truncated ? '<p class="hint">Les incidents prioritaires sont présentés ici. Le dossier complet est disponible dans Vision.</p>' : ''}
+    <p class="hint">${state.requests.length ? '' : 'Aucune autorisation en attente. '}${state.summary.last_checked_at ? `Dernier constat : ${formatDate(state.summary.last_checked_at)}.` : 'Aucun constat récent disponible.'}</p>
+    <button class="inline-secondary" data-action="refresh">Actualiser</button>`;
+};
+
+const incidentCard = (item, prominent = false) => {
+  const assessment = item.assessment ?? {};
+  const label = assessment.label ?? 'Incident à examiner';
+  return `<article class="${prominent ? 'section priority-incident' : 'incident-row'} ${item.severity === 'critical' ? 'critical' : ''}">
+    <span class="assessment-label">${escapeHtml(label)}</span>
+    <h3>${escapeHtml(assessment.title ?? item.equipment)}</h3>
+    <p>${assessment.finding_count != null ? `${assessment.finding_count} anomalies regroupées au dernier contrôle.` : escapeHtml(item.message)}</p>
+    <button class="${prominent ? 'inline-primary' : 'inline-secondary'}" data-action="incident" data-incident-id="${escapeHtml(item.incident_id)}">Voir le problème →</button>
+  </article>`;
+};
+
+const incidentDetail = () => {
+  const item = state.summary?.attention?.find(value => value.incident_id === state.incidentId);
+  if (!item) return '<section class="section"><p>Cet incident n’est plus dans la synthèse active.</p><button class="inline-secondary" data-action="home">Retour à l’essentiel</button></section>';
+  const a = item.assessment ?? {};
+  return `<button class="inline-secondary" data-action="home">← L’essentiel</button>
+    <section class="section priority-incident ${item.severity === 'critical' ? 'critical' : ''}">
+      <span class="assessment-label">${escapeHtml(a.label ?? 'À examiner')}</span><h2>${escapeHtml(a.title ?? item.equipment)}</h2>
+      <p>${escapeHtml(item.message)}</p><p class="hint">Incident ouvert le ${formatDate(item.started_at)} · dernier constat ${formatDate(a.observed_at)}</p>
+      ${a.conclusion ? `<div class="incident-conclusion"><h3>${a.decision_current ? 'Conclusion Tsunade' : 'Conclusion précédente'}</h3><p>${escapeHtml(a.conclusion)}</p>${a.reason ? `<p>${escapeHtml(a.reason)}</p>` : ''}<p class="hint">${formatDate(a.decided_at)}${a.confidence != null ? ` · confiance ${Math.round(a.confidence * 100)} %` : ''}</p></div>` : '<p class="incident-conclusion">La cause et l’impact restent à préciser par le diagnostic.</p>'}
+      ${a.state === 'stale' ? '<p class="hint">De nouveaux éléments sont disponibles depuis cette conclusion.</p>' : ''}
+      ${a.recommended_action ? `<p class="incident-conclusion"><strong>Prochaine étape</strong><br>${escapeHtml(a.recommended_action)}</p>` : ''}
+      ${a.next_action === 'diagnose' ? `<button class="inline-primary" data-action="diagnose" data-incident-id="${escapeHtml(item.incident_id)}">${a.state === 'needs_diagnosis' ? 'Demander un diagnostic' : 'Actualiser l’analyse'}</button>` : ''}
+      <a class="vision-link" href="/ui/?incident=${encodeURIComponent(item.incident_id)}#incidents">Ouvrir le dossier dans Vision →</a>
+    </section>`;
 };
 
 const profile = () => {
@@ -150,9 +190,17 @@ const render = () => {
     return;
   }
   if (state.view === 'home') app.innerHTML = home();
+  else if (state.view === 'incident') app.innerHTML = state.token ? incidentDetail() : connectionRequired();
+  else if (state.view === 'incidents') app.innerHTML = state.token ? `<button class="inline-secondary" data-action="home">← L’essentiel</button><section class="section"><h2 class="section-title">Les sujets suivis</h2>${(state.summary?.attention ?? []).map(item => incidentCard(item)).join('')}</section>` : connectionRequired();
   else if (state.view === 'activity') app.innerHTML = state.token ? `<section class="section"><h2 class="section-title">Activité récente</h2><div class="activity-list">${activityRows(state.activity)}</div></section>` : connectionRequired();
-  else if (state.view === 'decisions') app.innerHTML = state.token ? `${state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Décisions requises</h2><div class="empty">Tsunade n’a aucune demande en attente.</div></section>'}` : connectionRequired();
+  else if (state.view === 'decisions') app.innerHTML = state.token ? `${state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Aucune autorisation en attente</h2><p>Aucune action ne demande actuellement votre accord. Les incidents suivis restent accessibles dans l’essentiel.</p><button class="inline-secondary" data-action="home">Voir les incidents</button></section>'}` : connectionRequired();
   else app.innerHTML = profile();
+  if (state.notice) app.insertAdjacentHTML('afterbegin', `<p class="diagnosis-notice" role="status">${escapeHtml(state.notice)}</p>`);
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const selected = item.dataset.view === (['incident', 'incidents'].includes(state.view) ? 'home' : state.view);
+    item.classList.toggle('active', selected);
+    item.setAttribute('aria-current', selected ? 'page' : 'false');
+  });
 };
 
 const loadDashboard = async () => {
@@ -165,10 +213,10 @@ const loadDashboard = async () => {
   state.activity = Array.isArray(activity.activity) ? activity.activity : [];
 };
 
-const refresh = async () => {
-  state.loading = true;
+const refresh = async ({quiet = false} = {}) => {
+  state.loading = !quiet;
   state.error = null;
-  render();
+  if (!quiet) render();
   try {
     await loadDashboard();
   } catch (error) {
@@ -218,6 +266,7 @@ const pollPairing = async () => {
 };
 
 const respond = async button => {
+  state.busy = true;
   button.disabled = true;
   try {
     await apiRequest(`/requests/${encodeURIComponent(button.dataset.requestId)}/response`, {
@@ -227,6 +276,8 @@ const respond = async button => {
   } catch (error) {
     state.error = error.message;
     render();
+  } finally {
+    state.busy = false;
   }
 };
 
@@ -237,6 +288,27 @@ document.querySelector('#app').addEventListener('click', async event => {
   else if (button.dataset.action === 'poll') await pollPairing();
   else if (button.dataset.action === 'respond') await respond(button);
   else if (button.dataset.action === 'refresh') await refresh();
+  else if (button.dataset.action === 'incident') {
+    state.incidentId = button.dataset.incidentId;
+    state.view = 'incident'; state.notice = null; render();
+  }
+  else if (['home', 'decisions', 'incidents'].includes(button.dataset.action)) {
+    state.view = button.dataset.action; state.notice = null; render();
+  }
+  else if (button.dataset.action === 'diagnose') {
+    state.busy = true;
+    button.disabled = true;
+    try {
+      const result = await apiRequest(`/incidents/${encodeURIComponent(button.dataset.incidentId)}/diagnose`, {method: 'POST', body: {}});
+      state.notice = result.status === 'AI_QUEUED' ? 'Diagnostic demandé à Katsuyu.' : result.status === 'DETERMINISTIC' ? 'Tsunade a actualisé sa conclusion.' : 'Le diagnostic manque encore d’éléments pour aboutir.';
+      await refresh();
+    } catch (error) {
+      state.notice = `Diagnostic non confirmé : ${error.message}`;
+      render();
+    } finally {
+      state.busy = false;
+    }
+  }
   else if (button.dataset.action === 'forget') {
     await vaultDelete('companion-token');
     state.token = null;
@@ -251,6 +323,7 @@ document.querySelectorAll('.nav-item').forEach(button => button.addEventListener
   document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item === button));
   state.view = button.dataset.view;
   state.error = null;
+  state.notice = null;
   render();
 }));
 
@@ -261,6 +334,9 @@ const initialize = async () => {
 };
 
 void initialize();
+setInterval(() => {
+  if (state.token && !document.hidden && !state.loading && !state.busy && state.view !== 'profile') void refresh({quiet: true});
+}, 30000);
 if (window.isSecureContext && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }

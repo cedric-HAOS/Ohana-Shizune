@@ -29,7 +29,7 @@ propose « Installer Shizune » ou « Ajouter à l’écran d’accueil ».
 - synthèse et décisions réelles fournies par Tsunade ;
 - activité récente synthétique ;
 - liste des incidents critiques ;
-- navigation Accueil, Activité, Décisions et Profil ;
+- navigation L’essentiel, Activité, Décisions et Profil ;
 - icône officielle Ohana ;
 - association contrôlée depuis Vision avec code et empreinte TLS ;
 - jeton compagnon conservé dans IndexedDB sur l’iPhone ;
@@ -81,3 +81,15 @@ dans une URL, un journal ou le cache applicatif.
 
 Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 [docs/TEST-PLAN.md](docs/TEST-PLAN.md) et [docs/PWA.md](docs/PWA.md).
+
+## L’essentiel (0.2.3)
+
+L’accueil présente l’incident prioritaire et regroupe les autres sujets. La fiche
+d’un incident distingue le constat, la conclusion datée et la prochaine étape.
+« Lancer le diagnostic » transmet une demande bornée à Tsunade via Vision ;
+« Voir le dossier » ouvre l’incident dans Vision sans jeton dans l’URL.
+Les réparations restent soumises aux autorisations existantes.
+
+La synthèse nécessite Agent 1.26.16 et Vision 1.22.13. Elle s’actualise toutes
+les 30 secondes lorsque la page est visible, sans interrompre une action.
+Cette release concerne uniquement la PWA, distribuée en archive statique.
