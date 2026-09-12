@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0] — 2026-09-12 — Autoriser les investigations complémentaires
+
+- Les demandes de collecte complémentaire portent un titre dédié ; la fiche
+  incident donne accès à l’autorisation et affiche l’état de la collecte puis
+  de sa réévaluation. Le canal de réponse existant est conservé.
+
 ## [0.2.3] — 2026-09-11 — L’essentiel et les prochaines étapes
 
 - L’accueil présente le problème prioritaire et une synthèse des autres sujets.

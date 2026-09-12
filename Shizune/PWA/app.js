@@ -116,7 +116,7 @@ const activityRows = items => items.length
   : '<div class="empty compact">Aucune activité récente.</div>';
 
 const requestCard = request => `<section class="section decision">
-  <h2 class="section-title"><span class="section-icon">⚖</span>Décision requise</h2>
+  <h2 class="section-title"><span class="section-icon">⚖</span>${request.kind === 'investigation_authorization' ? 'Collecte complémentaire' : 'Décision requise'}</h2>
   <div class="decision-copy"><span class="shield">♢</span><div><p>${escapeHtml(request.question)}</p><small>${escapeHtml(request.context)}</small></div></div>
   <div class="actions request-actions">${request.choices.map(choice => `<button class="${choice === 'AUTHORIZE' ? 'blue' : choice === 'REFUSE' ? 'danger' : ''}" data-action="respond" data-request-id="${escapeHtml(request.request_id)}" data-choice="${escapeHtml(choice)}">${{ AUTHORIZE: 'Autoriser', REFUSE: 'Refuser', LATER: 'Plus tard', CONFIRM: 'Confirmer' }[choice] ?? escapeHtml(choice)}</button>`).join('')}</div>
 </section>`;
@@ -169,6 +169,8 @@ const incidentDetail = () => {
       ${a.state === 'stale' ? '<p class="hint">De nouveaux éléments sont disponibles depuis cette conclusion.</p>' : ''}
       ${a.recommended_action ? `<p class="incident-conclusion"><strong>Prochaine étape</strong><br>${escapeHtml(a.recommended_action)}</p>` : ''}
       ${a.next_action === 'diagnose' ? `<button class="inline-primary" data-action="diagnose" data-incident-id="${escapeHtml(item.incident_id)}">${a.state === 'needs_diagnosis' ? 'Demander un diagnostic' : 'Actualiser l’analyse'}</button>` : ''}
+      ${a.next_action === 'decisions' ? '<button class="inline-primary" data-action="decisions">Examiner la demande de collecte</button>' : ''}
+      ${a.followup?.detail ? `<p class="hint" role="status">${escapeHtml(a.followup.detail)}</p>` : ''}
       <a class="vision-link" href="/ui/?incident=${encodeURIComponent(item.incident_id)}#incidents">Ouvrir le dossier dans Vision →</a>
     </section>`;
 };

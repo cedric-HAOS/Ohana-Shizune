@@ -82,6 +82,12 @@ dans une URL, un journal ou le cache applicatif.
 Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 [docs/TEST-PLAN.md](docs/TEST-PLAN.md) et [docs/PWA.md](docs/PWA.md).
 
+## Investigations complémentaires (0.3.0)
+
+Avec Agent 1.27.0, Tsunade peut proposer une collecte complémentaire bornée.
+La demande précise son périmètre et permet de l’autoriser, la refuser ou la
+reporter. La fiche incident suit ensuite la collecte Katsuyu et la réévaluation.
+
 ## L’essentiel (0.2.3)
 
 L’accueil présente l’incident prioritaire et regroupe les autres sujets. La fiche
