@@ -121,6 +121,17 @@ const requestCard = request => `<section class="section decision">
   <div class="actions request-actions">${request.choices.map(choice => `<button class="${choice === 'AUTHORIZE' ? 'blue' : choice === 'REFUSE' ? 'danger' : ''}" data-action="respond" data-request-id="${escapeHtml(request.request_id)}" data-choice="${escapeHtml(choice)}">${{ AUTHORIZE: 'Autoriser', REFUSE: 'Refuser', LATER: 'Plus tard', CONFIRM: 'Confirmer' }[choice] ?? escapeHtml(choice)}</button>`).join('')}</div>
 </section>`;
 
+// Phase 4: only the essential; the rules and their evidence stay in Vision.
+const preventiveCard = preventive => {
+  if (!preventive) return '';
+  const watch = preventive.watch ?? [];
+  return `<section class="section preventive"><h2 class="section-title"><span class="section-icon">◷</span>Prévention</h2>
+    ${watch.length ? `<p>À surveiller :</p><ul class="preventive-list">${watch.map(item => `<li class="${item.urgent ? 'urgent' : ''}">${escapeHtml(item.title)}</li>`).join('')}</ul>` : '<p>Aucune dérive détectée.</p>'}
+    <p class="preventive-conclusion">${escapeHtml(preventive.conclusion)}</p>
+    <p class="hint">Le détail des tendances est disponible dans Vision.</p>
+  </section>`;
+};
+
 const connectionRequired = () => `<section class="section"><h2 class="section-title">Connexion à Konoha</h2><div class="empty">Shizune doit être associée à Tsunade avant d’afficher l’état réel.<br><button class="inline-primary" data-action="pair">Associer cet iPhone</button></div></section>`;
 
 const home = () => {
@@ -141,6 +152,7 @@ const home = () => {
     ${state.requests.length ? `<section class="section decision"><h2>${countLabel(state.requests.length, 'décision en attente', 'décisions en attente')}</h2><button class="inline-primary" data-action="decisions">Voir les demandes</button></section>` : ''}
     ${first ? incidentCard(first, true) : ''}
     ${remaining.length ? `<section class="section"><h2 class="section-title">${countLabel(remaining.length, 'autre sujet suivi', 'autres sujets suivis')}</h2><p>${escapeHtml(groupSummary || 'Les derniers constats et prochaines étapes sont disponibles.')}</p><button class="inline-secondary" data-action="incidents">Voir les équipements →</button></section>` : ''}
+    ${preventiveCard(state.summary.preventive)}
     ${state.summary.attention_truncated ? '<p class="hint">Les incidents prioritaires sont présentés ici. Le dossier complet est disponible dans Vision.</p>' : ''}
     <p class="hint">${state.requests.length ? '' : 'Aucune autorisation en attente. '}${state.summary.last_checked_at ? `Dernier constat : ${formatDate(state.summary.last_checked_at)}.` : 'Aucun constat récent disponible.'}</p>
     <button class="inline-secondary" data-action="refresh">Actualiser</button>`;

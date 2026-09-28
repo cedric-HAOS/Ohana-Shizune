@@ -36,3 +36,4 @@ h1 { margin: 0; font-size: clamp(1.65rem, 6vw, 2.2rem); letter-spacing: -.04em; 
 .diagnosis-notice { padding: 14px; background: #eef5fd; border-radius: 8px; color: #194b80; }
 .request-actions button, .inline-secondary { min-height: 44px; }
 @media (min-width: 700px) { .app-shell { padding-top: 46px; }.bottom-nav { position: sticky; margin: 0 -18px; } }
+.preventive-list { margin: 8px 0 0; padding-left: 20px; color: #4c596c; line-height: 1.5; }.preventive-list li.urgent { color: #a43e3e; font-weight: 650; }.preventive-conclusion { margin-top: 12px; color: #1d3557; font-weight: 650; }
