@@ -82,6 +82,11 @@ dans une URL, un journal ou le cache applicatif.
 Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 [docs/TEST-PLAN.md](docs/TEST-PLAN.md) et [docs/PWA.md](docs/PWA.md).
 
+## Prévention (0.4.0)
+
+Avec Agent 1.39.0, l’essentiel affiche la synthèse préventive de Tsunade : les
+dérives à surveiller et la conclusion. Le détail des règles est dans Vision.
+
 ## Investigations complémentaires (0.3.0)
 
 Avec Agent 1.27.0, Tsunade peut proposer une collecte complémentaire bornée.

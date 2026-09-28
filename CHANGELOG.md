@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0] — 2026-09-28 — Prévention
+
+- L’essentiel affiche une carte « Prévention » : les dérives que Tsunade
+  demande de surveiller (disque, redémarrages, coupures réseau) et sa
+  conclusion, par exemple « Aucune intervention nécessaire. ». Les règles et
+  leurs preuves restent dans Vision. Requiert Ohana-Agent 1.39.0 ; sans
+  synthèse préventive, la carte n’apparaît pas.
+
 ## [0.3.0] — 2026-09-12 — Autoriser les investigations complémentaires
 
 - Les demandes de collecte complémentaire portent un titre dédié ; la fiche
