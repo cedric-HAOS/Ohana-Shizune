@@ -2,6 +2,8 @@
 
 ## Non publié
 
+## [0.5.0] — 2026-09-29 — Accueil : état, services et journaux
+
 - Nouvel accueil, dans cet ordre : l'état de Konoha avec les icônes de Vision
   (« Konoha : stable / dégradé / critique », décisions en attente et sujets
   suivis) ; **Services essentiels** (DNS avec sa durée de réponse, DHCP, MQTT,
