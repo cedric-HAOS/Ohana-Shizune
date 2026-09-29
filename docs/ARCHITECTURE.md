@@ -20,8 +20,11 @@ Shikamaru -> Tsunade -> demande durable -> Shizune PWA
 Le listener compagnon expose uniquement :
 
 - l’association d’une PWA ;
-- la santé synthétique de Konoha ;
-- les demandes Tsunade encore ouvertes ;
+- la santé synthétique de Konoha, avec les services essentiels (état et durée
+  mesurée, jamais leurs détails techniques) et le contrôle des journaux par
+  équipement (état, nombre d’anomalies, date du dernier contrôle) ;
+- les demandes Tsunade encore ouvertes, et celles déjà traitées pour suivre
+  l’issue d’une décision ;
 - l’activité récente bornée ;
 - les réponses structurées aux demandes ;
 - la révocation de la session.
