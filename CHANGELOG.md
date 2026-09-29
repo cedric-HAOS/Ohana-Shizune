@@ -1,5 +1,25 @@
 # Changelog
 
+## Non publié
+
+- Nouvel accueil, dans cet ordre : l'état de Konoha avec les icônes de Vision
+  (« Konoha : stable / dégradé / critique », décisions en attente et sujets
+  suivis) ; **Services essentiels** (DNS avec sa durée de réponse, DHCP, MQTT,
+  Home Assistant, Z-Wave, Téléinformation, chacun avec son icône d'état) ;
+  **Journaux par équipement** (INFRA-01, LINKY-01, ZWAVE-01, HA-01 : attente de
+  décision, analyse en cours, à examiner, bruit connu, OK ; date du dernier
+  contrôle ; un appui ouvre la fiche de l'incident) ; **Prévention**. Les
+  autres incidents restent accessibles par « Voir tous les sujets suivis ».
+  Requiert Ohana-Agent qui publie `services` et `logs` ; sans eux, ces blocs
+  n'apparaissent pas.
+- L'écran « Connexion indisponible » indique l'heure de la dernière
+  synchronisation réussie.
+- Après une réponse, un message confirme l'envoi (autorisation, refus, report) ;
+  une demande reportée indique quand Tsunade la représentera.
+- « Décisions récentes » (24 h) : ce que vous avez répondu et l'issue publiée
+  par Tsunade (réparation faite, échec…), ou « Exécution en cours ». Requiert
+  Ohana-Vision avec le relais `/api/shizune/requests/recent`.
+
 ## [0.4.0] — 2026-09-28 — Prévention
 
 - L’essentiel affiche une carte « Prévention » : les dérives que Tsunade

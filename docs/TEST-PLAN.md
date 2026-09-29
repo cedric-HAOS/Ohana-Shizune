@@ -46,6 +46,24 @@ jeton, chargement de la synthèse, puis réponse structurée à une demande.
 - lien du dossier Vision sans jeton, ouverture du bon incident ;
 - actualisation visible sans effacer une action ou le formulaire de profil.
 
+## État, décisions et synchronisation (Phase 7)
+
+- Services essentiels : une tuile par service configuré, durée mesurée
+  (« 4,6 ms »), icône dégradé/critique/inconnu, service sans mesure récente
+  jamais affiché comme sain ;
+- Journaux par équipement : attente de décision, analyse, bruit connu, OK,
+  date du dernier contrôle, appui sur une ligne avec incident ; Agent sans
+  `services`/`logs` : blocs absents ;
+- état sain, dégradé, critique et inconnu : icône de Vision, une phrase, aucun
+  terme technique, lien « Voir les décisions » si une décision attend ;
+- clic sur Autoriser / Refuser / Plus tard : message de confirmation immédiat ;
+- demande reportée : « Reportée… vers HH:MM » ;
+- « Décisions récentes » : décision + issue de l'activité, « Exécution en
+  cours » tant qu'aucun résultat, demande expirée ou disparue ;
+- passerelle ou Agent indisponible : « Connexion indisponible » avec l'heure de
+  la dernière synchronisation réussie, puis reprise par « Réessayer » ;
+- Vision sans `/requests/recent` : l'essentiel reste utilisable.
+
 Validation locale effectuée sur les fichiers réels avec des données de démonstration :
 vue desktop, largeur 390 px et refus d’une demande sans session. Les tests Agent
 et Vision couvrent l’authentification et le relais borné. L’association et le

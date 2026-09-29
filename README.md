@@ -82,6 +82,16 @@ dans une URL, un journal ou le cache applicatif.
 Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md),
 [docs/TEST-PLAN.md](docs/TEST-PLAN.md) et [docs/PWA.md](docs/PWA.md).
 
+## Accueil : état, services et journaux (0.5.0)
+
+Avec Agent 1.44.0 et Vision 1.35.0, l’accueil présente dans l’ordre : l’état de
+Konoha (icônes de Vision), les services essentiels (DNS avec sa durée de
+réponse, DHCP, MQTT, Home Assistant, Z-Wave, Téléinformation), les journaux par
+équipement avec la date du dernier contrôle, puis la prévention. Après une
+réponse, un message confirme l’envoi ; « Décisions récentes » suit l’issue des
+dernières décisions ; l’écran « Connexion indisponible » indique la dernière
+synchronisation réussie.
+
 ## Prévention (0.4.0)
 
 Avec Agent 1.39.0, l’essentiel affiche la synthèse préventive de Tsunade : les

@@ -5,8 +5,8 @@ const DEVICE_ID_KEY = 'ohana-shizune-device-id';
 
 const state = {
   view: 'home', deviceId: null, token: null, pairing: null,
-  summary: null, requests: [], activity: [], loading: true, error: null,
-  incidentId: null, notice: null, busy: false,
+  summary: null, requests: [], recent: [], activity: [], loading: true, error: null,
+  incidentId: null, notice: null, busy: false, lastSyncAt: null,
 };
 
 const escapeHtml = value => String(value ?? '')
@@ -105,29 +105,106 @@ const formatDate = value => {
   }).format(date);
 };
 
-const healthPresentation = summary => ({
-  healthy: ['Konoha : Stable', '✓', 'healthy'],
-  degraded: ['Konoha : Dégradé', '!', 'degraded'],
-  critical: ['Konoha : Critique', '!', 'critical'],
-}[summary?.konoha_state] ?? ['Konoha : Inconnu', '?', 'unknown']);
-
 const activityRows = items => items.length
   ? items.map(item => `<div class="activity-row"><span>${item.kind === 'result' ? '✓' : '⌁'}</span><span>${escapeHtml(item.title)}${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}</span><time>${formatDate(item.occurred_at)}</time></div>`).join('')
   : '<div class="empty compact">Aucune activité récente.</div>';
 
+const CHOICE_DONE = { AUTHORIZE: 'autorisé', REFUSE: 'refusé', CONFIRM: 'confirmé' };
+const CHOICE_SENT = {
+  AUTHORIZE: 'Autorisation envoyée à Tsunade. L’issue apparaîtra dans « Décisions récentes ».',
+  REFUSE: 'Refus enregistré. Tsunade ne fera rien.',
+  CONFIRM: 'Confirmation envoyée à Tsunade.',
+  LATER: 'Décision reportée. Tsunade vous la représentera plus tard.',
+};
+const DAY = 24 * 3600 * 1000;
+
+// What happened after an answer, read from the Agent's own activity feed (same incident, later).
+const decisionOutcome = request => {
+  const answeredAt = new Date(request.answered_at).getTime();
+  const outcome = state.activity.find(item => item.incident_id === request.incident_id
+    && ['action', 'result'].includes(item.kind) && new Date(item.occurred_at).getTime() >= answeredAt);
+  if (outcome) return outcome.title;
+  return request.answer === 'AUTHORIZE' ? 'Exécution en cours : l’issue sera affichée ici.' : '';
+};
+
+const recentDecisions = () => {
+  const now = Date.now();
+  const items = state.recent.filter(request => request.state !== 'pending'
+    && now - new Date(request.answered_at ?? request.expires_at).getTime() < DAY).slice(0, 5);
+  if (!items.length) return '';
+  return `<section class="section"><h2 class="section-title">Décisions récentes</h2><div class="activity-list">${items.map(request => {
+    const done = request.state === 'answered'
+      ? `Vous avez ${CHOICE_DONE[request.answer] ?? 'répondu'} le ${formatDate(request.answered_at)}.`
+      : request.state === 'expired' ? `Sans réponse : demande expirée le ${formatDate(request.expires_at)}.`
+        : 'Le problème a disparu avant votre réponse.';
+    const outcome = request.state === 'answered' ? decisionOutcome(request) : '';
+    return `<div class="decision-row"><strong>${escapeHtml(request.question)}</strong><small>${done}</small>${outcome ? `<small class="decision-outcome">${escapeHtml(outcome)}</small>` : ''}</div>`;
+  }).join('')}</div></section>`;
+};
+
 const requestCard = request => `<section class="section decision">
   <h2 class="section-title"><span class="section-icon">⚖</span>${request.kind === 'investigation_authorization' ? 'Collecte complémentaire' : 'Décision requise'}</h2>
   <div class="decision-copy"><span class="shield">♢</span><div><p>${escapeHtml(request.question)}</p><small>${escapeHtml(request.context)}</small></div></div>
+  ${request.deferred_until && new Date(request.deferred_until).getTime() > Date.now() ? `<p class="hint">Reportée : Tsunade vous la représentera vers ${formatDate(request.deferred_until)}.</p>` : ''}
   <div class="actions request-actions">${request.choices.map(choice => `<button class="${choice === 'AUTHORIZE' ? 'blue' : choice === 'REFUSE' ? 'danger' : ''}" data-action="respond" data-request-id="${escapeHtml(request.request_id)}" data-choice="${escapeHtml(choice)}">${{ AUTHORIZE: 'Autoriser', REFUSE: 'Refuser', LATER: 'Plus tard', CONFIRM: 'Confirmer' }[choice] ?? escapeHtml(choice)}</button>`).join('')}</div>
 </section>`;
+
+// Phase 7 home: state, essential services, logs by equipment, prevention.
+const ageLabel = value => {
+  const minutes = Math.round((Date.now() - new Date(value).getTime()) / 60000);
+  if (!Number.isFinite(minutes) || minutes < 0) return '';
+  if (minutes < 2) return 'à l’instant';
+  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 48 * 60) return `il y a ${Math.round(minutes / 60)} h`;
+  return `il y a ${Math.round(minutes / 1440)} j`;
+};
+
+const STATE_LABEL = { healthy: 'Konoha : stable', degraded: 'Konoha : dégradé', critical: 'Konoha : critique' };
+
+const stateSentence = summary => {
+  const parts = [];
+  if (summary.pending_requests) parts.push(countLabel(summary.pending_requests, 'décision en attente', 'décisions en attente'));
+  if (summary.active_count) parts.push(countLabel(summary.active_count, 'sujet suivi', 'sujets suivis'));
+  if (parts.length) return parts.join(' · ');
+  return summary.konoha_state === 'healthy' ? 'Aucun problème en cours' : 'Tsunade ne fournit pas d’état pour le moment';
+};
+
+const stateCard = summary => {
+  const tone = STATE_LABEL[summary.konoha_state] ? summary.konoha_state : 'unknown';
+  const icon = tone === 'unknown' ? '<span class="state-unknown">?</span>' : `<img src="./health-${tone}.png" alt="" width="64" height="64">`;
+  return `<section class="state-card ${tone}" role="status">${icon}<div><h2>${STATE_LABEL[tone] ?? 'Konoha : inconnu'}</h2><p>${escapeHtml(stateSentence(summary))}</p>${summary.pending_requests ? '<button class="link-button" data-action="decisions">Voir les décisions →</button>' : ''}</div></section>`;
+};
+
+const MARK = { healthy: ['good', '✓'], degraded: ['wa', '!'], critical: ['bad', '✕'], unknown: ['unk', '?'], ok: ['good', '✓'], decision: ['wa', '!'], attention: ['wa', '!'], analyzing: ['inf', 'i'], watch: ['inf', 'i'] };
+const LOG_TAG = { ok: ['to', 'OK'], decision: ['tw', 'Attente décision'], attention: ['tw', 'À examiner'], analyzing: ['ti', 'Analyse en cours'], watch: ['ti', 'Surveillé'] };
+const mark = status => { const [tone, glyph] = MARK[status] ?? MARK.unknown; return `<span class="ic ${tone}">${glyph}</span>`; };
+
+const servicesCard = services => {
+  if (!services?.items?.length) return '';
+  return `<section class="section"><div class="block-title"><h2>Services essentiels</h2>${services.checked_at ? `<small>${ageLabel(services.checked_at)}</small>` : ''}</div>
+    <div class="tiles">${services.items.map(item => `<div class="tile">${mark(item.status)}<div><strong>${escapeHtml(item.label)}</strong>${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}</div></div>`).join('')}</div></section>`;
+};
+
+const logsCard = logs => {
+  if (!logs?.equipments?.length) return '';
+  const checked = logs.checked_at ? `Dernier contrôle : ${formatDate(logs.checked_at).replace(/,?\s+/, ' à ')}` : 'Aucun contrôle terminé pour le moment';
+  return `<section class="section"><div class="block-title"><h2>Journaux par équipement</h2></div><p class="block-sub">${escapeHtml(checked)}</p>
+    ${logs.equipments.map(item => {
+      const [tagTone, tagText] = LOG_TAG[item.status] ?? LOG_TAG.attention;
+      const body = `${mark(item.status)}<span class="tx"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="tag ${tagTone}">${tagText}</span>${item.incident_id ? '<span class="chev">›</span>' : ''}`;
+      return item.incident_id
+        ? `<button class="log-row" data-action="incident" data-incident-id="${escapeHtml(item.incident_id)}">${body}</button>`
+        : `<div class="log-row">${body}</div>`;
+    }).join('')}</section>`;
+};
 
 // Phase 4: only the essential; the rules and their evidence stay in Vision.
 const preventiveCard = preventive => {
   if (!preventive) return '';
   const watch = preventive.watch ?? [];
-  return `<section class="section preventive"><h2 class="section-title"><span class="section-icon">◷</span>Prévention</h2>
-    ${watch.length ? `<p>À surveiller :</p><ul class="preventive-list">${watch.map(item => `<li class="${item.urgent ? 'urgent' : ''}">${escapeHtml(item.title)}</li>`).join('')}</ul>` : '<p>Aucune dérive détectée.</p>'}
-    <p class="preventive-conclusion">${escapeHtml(preventive.conclusion)}</p>
+  return `<section class="section preventive"><div class="block-title"><h2>Prévention</h2></div>
+    ${watch.map(item => `<div class="log-row"><span class="ic inf">◷</span><span class="tx"><strong>À surveiller</strong><small class="${item.urgent ? 'urgent' : ''}">${escapeHtml(item.title)}</small></span></div>`).join('')}
+    <div class="log-row">${mark(watch.some(item => item.urgent) ? 'attention' : 'ok')}<span class="tx"><strong>${escapeHtml(preventive.conclusion)}</strong>${watch.length ? '' : '<small>Aucune dérive détectée</small>'}</span></div>
     <p class="hint">Le détail des tendances est disponible dans Vision.</p>
   </section>`;
 };
@@ -137,24 +214,14 @@ const connectionRequired = () => `<section class="section"><h2 class="section-ti
 const home = () => {
   if (!state.token) return connectionRequired();
   if (!state.summary) return '<section class="section"><div class="empty">Synchronisation avec Tsunade…</div></section>';
-  const incidents = state.summary.attention ?? [];
-  const priority = incidents.filter(item => !['watch', 'resolved'].includes(item.assessment?.state));
-  const first = priority[0];
-  const remaining = incidents.filter(item => item !== first);
-  const stale = remaining.filter(item => item.assessment?.state === 'stale').length;
-  const analyzing = remaining.filter(item => item.assessment?.state === 'analyzing').length;
-  const watching = remaining.filter(item => item.assessment?.state === 'watch').length;
-  const groupSummary = [stale ? `${countLabel(stale, 'analyse', 'analyses')} à actualiser` : '', analyzing ? `${countLabel(analyzing, 'analyse', 'analyses')} en cours ou en attente` : '', watching ? `${countLabel(watching, 'équipement', 'équipements')} sous surveillance` : ''].filter(Boolean).join(' · ');
-  const headline = first ? 'Ce qui demande votre attention'
-    : incidents.length ? 'Tsunade poursuit la surveillance' : 'Aucun incident actif signalé';
+  const summary = state.summary;
   return `
-    <header class="essential-heading"><p>L’ESSENTIEL</p><h2>${headline}</h2></header>
-    ${state.requests.length ? `<section class="section decision"><h2>${countLabel(state.requests.length, 'décision en attente', 'décisions en attente')}</h2><button class="inline-primary" data-action="decisions">Voir les demandes</button></section>` : ''}
-    ${first ? incidentCard(first, true) : ''}
-    ${remaining.length ? `<section class="section"><h2 class="section-title">${countLabel(remaining.length, 'autre sujet suivi', 'autres sujets suivis')}</h2><p>${escapeHtml(groupSummary || 'Les derniers constats et prochaines étapes sont disponibles.')}</p><button class="inline-secondary" data-action="incidents">Voir les équipements →</button></section>` : ''}
-    ${preventiveCard(state.summary.preventive)}
-    ${state.summary.attention_truncated ? '<p class="hint">Les incidents prioritaires sont présentés ici. Le dossier complet est disponible dans Vision.</p>' : ''}
-    <p class="hint">${state.requests.length ? '' : 'Aucune autorisation en attente. '}${state.summary.last_checked_at ? `Dernier constat : ${formatDate(state.summary.last_checked_at)}.` : 'Aucun constat récent disponible.'}</p>
+    ${stateCard(summary)}
+    ${servicesCard(summary.services)}
+    ${logsCard(summary.logs)}
+    ${preventiveCard(summary.preventive)}
+    ${summary.attention_truncated ? '<p class="hint">Les incidents prioritaires sont présentés ici. Le dossier complet est disponible dans Vision.</p>' : ''}
+    <button class="inline-secondary" data-action="incidents">Voir tous les sujets suivis →</button>
     <button class="inline-secondary" data-action="refresh">Actualiser</button>`;
 };
 
@@ -196,7 +263,7 @@ const profile = () => {
 const render = () => {
   const app = document.querySelector('#app');
   if (state.error) {
-    app.innerHTML = `<section class="section error"><h2 class="section-title">Connexion indisponible</h2><p>${escapeHtml(state.error)}</p><button class="inline-primary" data-action="refresh">Réessayer</button></section>${state.view === 'profile' ? profile() : ''}`;
+    app.innerHTML = `<section class="section error"><h2 class="section-title">Connexion indisponible</h2><p>${escapeHtml(state.error)}</p><p class="hint">${state.lastSyncAt ? `Dernière synchronisation réussie : ${formatDate(state.lastSyncAt)}.` : 'Aucune synchronisation réussie depuis l’ouverture de Shizune.'}</p><button class="inline-primary" data-action="refresh">Réessayer</button></section>${state.view === 'profile' ? profile() : ''}`;
     return;
   }
   if (state.loading) {
@@ -207,7 +274,7 @@ const render = () => {
   else if (state.view === 'incident') app.innerHTML = state.token ? incidentDetail() : connectionRequired();
   else if (state.view === 'incidents') app.innerHTML = state.token ? `<button class="inline-secondary" data-action="home">← L’essentiel</button><section class="section"><h2 class="section-title">Les sujets suivis</h2>${(state.summary?.attention ?? []).map(item => incidentCard(item)).join('')}</section>` : connectionRequired();
   else if (state.view === 'activity') app.innerHTML = state.token ? `<section class="section"><h2 class="section-title">Activité récente</h2><div class="activity-list">${activityRows(state.activity)}</div></section>` : connectionRequired();
-  else if (state.view === 'decisions') app.innerHTML = state.token ? `${state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Aucune autorisation en attente</h2><p>Aucune action ne demande actuellement votre accord. Les incidents suivis restent accessibles dans l’essentiel.</p><button class="inline-secondary" data-action="home">Voir les incidents</button></section>'}` : connectionRequired();
+  else if (state.view === 'decisions') app.innerHTML = state.token ? `${state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Aucune autorisation en attente</h2><p>Aucune action ne demande actuellement votre accord. Les incidents suivis restent accessibles dans l’essentiel.</p><button class="inline-secondary" data-action="home">Voir les incidents</button></section>'}${recentDecisions()}` : connectionRequired();
   else app.innerHTML = profile();
   if (state.notice) app.insertAdjacentHTML('afterbegin', `<p class="diagnosis-notice" role="status">${escapeHtml(state.notice)}</p>`);
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -219,12 +286,16 @@ const render = () => {
 
 const loadDashboard = async () => {
   if (!state.token) return;
-  const [summary, requests, activity] = await Promise.all([
+  // The follow-up is a convenience: an older gateway without it must not break the essentials.
+  const [summary, requests, activity, recent] = await Promise.all([
     apiRequest('/summary'), apiRequest('/requests'), apiRequest('/activity'),
+    apiRequest('/requests/recent').catch(() => ({ requests: [] })),
   ]);
   state.summary = summary;
   state.requests = Array.isArray(requests.requests) ? requests.requests : [];
   state.activity = Array.isArray(activity.activity) ? activity.activity : [];
+  state.recent = Array.isArray(recent.requests) ? recent.requests : [];
+  state.lastSyncAt = new Date().toISOString();
 };
 
 const refresh = async ({quiet = false} = {}) => {
@@ -286,6 +357,7 @@ const respond = async button => {
     await apiRequest(`/requests/${encodeURIComponent(button.dataset.requestId)}/response`, {
       method: 'POST', body: { choice: button.dataset.choice },
     });
+    state.notice = CHOICE_SENT[button.dataset.choice] ?? 'Réponse envoyée à Tsunade.';
     await refresh();
   } catch (error) {
     state.error = error.message;
@@ -328,6 +400,7 @@ document.querySelector('#app').addEventListener('click', async event => {
     state.token = null;
     state.summary = null;
     state.requests = [];
+    state.recent = [];
     state.activity = [];
     render();
   }
