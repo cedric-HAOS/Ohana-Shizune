@@ -2,6 +2,10 @@
 
 ## Non publié
 
+- Avec Agent 1.48.0, la tuile Synchro AdGuard affiche l’âge du dernier cycle
+  réussi lorsque la synchronisation est saine ; les messages de défaut restent
+  prioritaires. Tests et documentation actualisés, PWA 0.5.0 inchangée.
+
 - Documentation de la tuile Synchro AdGuard fournie par Agent 1.46.0 et
   administrée dans Vision 1.37.0 ; tests du rendu sain, critique et inconnu.
   Aucun changement du code de la PWA 0.5.0 ni de l’application native.

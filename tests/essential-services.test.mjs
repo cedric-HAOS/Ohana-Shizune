@@ -16,7 +16,7 @@ const renderer = ['escapeHtml', 'ageLabel', 'MARK', 'servicesCard']
   .map(block).join('\n') + '\nservicesCard(payload);';
 
 for (const [status, detail, tone] of [
-  ['healthy', 'Synchronisation vérifiée', 'good'],
+  ['healthy', 'Dernière synchro il y a 3 min', 'good'],
   ['critical', 'Synchronisation en défaut', 'bad'],
   ['unknown', 'Synchronisation non vérifiée', 'unk'],
 ]) {

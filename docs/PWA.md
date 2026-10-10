@@ -60,6 +60,9 @@ affiche la tuile **Synchro AdGuard** reçue dans la synthèse Agent. Elle distin
 **Synchronisation vérifiée**, **Synchronisation en défaut** et
 **Synchronisation non vérifiée**. Agent invalide la santé affichée lorsque le
 plugin est désactivé ou que la mesure dépasse quinze minutes.
+Lorsqu’Agent fournit la date du dernier cycle réussi, une synchronisation saine
+affiche **Dernière synchro il y a 3 min**, avec un âge calculé depuis la fin du
+cycle. Les messages de défaut et d’état non vérifié restent prioritaires.
 L’activation et les paramètres se gèrent dans Vision, dans **Configuration →
 Plugins → Synchronisation AdGuard**. Le rendu existant est compatible ; aucune
 mise à jour native de Shizune n’est nécessaire pour cette tuile.
