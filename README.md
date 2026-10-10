@@ -114,3 +114,9 @@ Les réparations restent soumises aux autorisations existantes.
 La synthèse nécessite Agent 1.26.16 et Vision 1.22.13. Elle s’actualise toutes
 les 30 secondes lorsque la page est visible, sans interrompre une action.
 Cette release concerne uniquement la PWA, distribuée en archive statique.
+
+## Supervision AdGuard
+
+La version 0.5.0 affiche **Synchro AdGuard** dans **Services essentiels** lorsque
+Agent 1.46.0 publie ce service. Activation dans Vision 1.37.0 ; détails et
+validation dans [le guide PWA](docs/PWA.md) et [le plan de tests](docs/TEST-PLAN.md).

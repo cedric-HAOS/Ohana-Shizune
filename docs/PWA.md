@@ -34,7 +34,7 @@ une seule fois son jeton compagnon et le conserve dans IndexedDB.
 
 L’accueil présente, dans l’ordre : l’état de Konoha (icône de Vision, décisions
 en attente, sujets suivis), les services essentiels (DNS, DHCP, MQTT, Home
-Assistant, Z-Wave, Téléinformation), les journaux par équipement avec la date du
+Assistant, Z-Wave, Téléinformation, Synchro AdGuard), les journaux par équipement avec la date du
 dernier contrôle, puis la prévention. Les blocs `services` et `logs` n’apparaissent
 que si l’Agent les publie (Agent 1.44.0). Un appui sur un équipement dont les
 journaux ont un incident ouvre sa fiche.
@@ -52,3 +52,14 @@ Le déploiement retenu sert Vision et Shizune en HTTP, exclusivement sur le
 Wi-Fi domestique ou via WireGuard. Les réponses privées ne sont jamais ajoutées
 au cache hors ligne. Le service worker reste désactivé en HTTP conformément aux
 règles du navigateur.
+
+## Synchronisation AdGuard
+
+À partir de Platform 1.0.142 (Agent 1.46.0, Vision 1.37.0), la PWA 0.5.0
+affiche la tuile **Synchro AdGuard** reçue dans la synthèse Agent. Elle distingue
+**Synchronisation vérifiée**, **Synchronisation en défaut** et
+**Synchronisation non vérifiée**. Agent invalide la santé affichée lorsque le
+plugin est désactivé ou que la mesure dépasse quinze minutes.
+L’activation et les paramètres se gèrent dans Vision, dans **Configuration →
+Plugins → Synchronisation AdGuard**. Le rendu existant est compatible ; aucune
+mise à jour native de Shizune n’est nécessaire pour cette tuile.

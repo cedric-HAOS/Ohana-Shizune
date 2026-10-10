@@ -2,6 +2,10 @@
 
 ## Non publié
 
+- Documentation de la tuile Synchro AdGuard fournie par Agent 1.46.0 et
+  administrée dans Vision 1.37.0 ; tests du rendu sain, critique et inconnu.
+  Aucun changement du code de la PWA 0.5.0 ni de l’application native.
+
 ## [0.5.0] — 2026-09-29 — Accueil : état, services et journaux
 
 - Nouvel accueil, dans cet ordre : l'état de Konoha avec les icônes de Vision

@@ -6,6 +6,7 @@ Depuis la racine du dépôt :
 
 ```powershell
 node --check Shizune/PWA/app.js
+node --test tests/essential-services.test.mjs
 git diff --check
 python -m http.server 8000 --bind 127.0.0.1 --directory Shizune/PWA
 ```
@@ -68,3 +69,11 @@ Validation locale effectuée sur les fichiers réels avec des données de démon
 vue desktop, largeur 390 px et refus d’une demande sans session. Les tests Agent
 et Vision couvrent l’authentification et le relais borné. L’association et le
 cycle de journaux réels seront à contrôler après déploiement.
+
+## Tuile Synchro AdGuard
+
+Les tests Node exécutent les fonctions de rendu de la PWA : présence de la
+tuile, détail et icône pour les états sain, critique et inconnu. Après déploiement,
+vérifier que l’activation dans Vision produit une mesure et que la désactivation
+ou une mesure de plus de quinze minutes affiche **Synchronisation non vérifiée**.
+Ces essais locaux ne prouvent pas la synchronisation des instances réelles.
