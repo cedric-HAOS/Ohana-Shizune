@@ -176,7 +176,7 @@ const stateCard = summary => {
 };
 
 const MARK = { healthy: ['good', '✓'], degraded: ['wa', '!'], critical: ['bad', '✕'], unknown: ['unk', '?'], ok: ['good', '✓'], decision: ['wa', '!'], attention: ['wa', '!'], analyzing: ['inf', 'i'], watch: ['inf', 'i'] };
-const LOG_TAG = { ok: ['to', 'OK'], decision: ['tw', 'Attente décision'], attention: ['tw', 'À examiner'], analyzing: ['ti', 'Analyse en cours'], watch: ['ti', 'Surveillé'] };
+const LOG_TAG = { ok: ['to', 'OK'], decision: ['tw', 'Attente décision'], attention: ['tw', 'À examiner'], analyzing: ['ti', 'Analyse en cours'], watch: ['ti', 'Surveillé'], unknown: ['tw', 'Non vérifié'] };
 const mark = status => { const [tone, glyph] = MARK[status] ?? MARK.unknown; return `<span class="ic ${tone}">${glyph}</span>`; };
 
 const servicesCard = services => {
@@ -185,10 +185,23 @@ const servicesCard = services => {
     <div class="tiles">${services.items.map(item => `<div class="tile">${mark(item.status)}<div><strong>${escapeHtml(item.label)}</strong>${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}</div></div>`).join('')}</div></section>`;
 };
 
+// How the latest daily log check ended; an older Agent sends only `checked_at`.
+const logCheckLine = logs => {
+  const at = value => formatDate(value).replace(/,?\s+/, ' à ');
+  const lastOk = logs.checked_at ? `dernier réussi le ${at(logs.checked_at)}` : 'aucun contrôle réussi connu';
+  const check = logs.last_check;
+  if (!check) return {text: logs.checked_at ? `Dernier contrôle : ${at(logs.checked_at)}` : 'Aucun contrôle terminé pour le moment', alert: false};
+  if (check.state === 'succeeded') return {text: `Dernier contrôle réussi : ${at(check.at)}`, alert: false};
+  if (check.state === 'failed') return {text: `Dernier contrôle en échec : ${at(check.at)} · ${lastOk}`, alert: true};
+  if (check.state === 'running') return {text: `Contrôle en cours depuis ${at(check.at)} · ${lastOk}`, alert: false};
+  if (check.state === 'waiting') return {text: `Contrôle en attente de démarrage · ${lastOk}`, alert: false};
+  return {text: 'Aucun contrôle effectué pour le moment', alert: false};
+};
+
 const logsCard = logs => {
   if (!logs?.equipments?.length) return '';
-  const checked = logs.checked_at ? `Dernier contrôle : ${formatDate(logs.checked_at).replace(/,?\s+/, ' à ')}` : 'Aucun contrôle terminé pour le moment';
-  return `<section class="section"><div class="block-title"><h2>Journaux par équipement</h2></div><p class="block-sub">${escapeHtml(checked)}</p>
+  const line = logCheckLine(logs);
+  return `<section class="section"><div class="block-title"><h2>Journaux par équipement</h2></div><p class="block-sub${line.alert ? ' urgent' : ''}">${escapeHtml(line.text)}</p>
     ${logs.equipments.map(item => {
       const [tagTone, tagText] = LOG_TAG[item.status] ?? LOG_TAG.attention;
       const body = `${mark(item.status)}<span class="tx"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="tag ${tagTone}">${tagText}</span>${item.incident_id ? '<span class="chev">›</span>' : ''}`;
