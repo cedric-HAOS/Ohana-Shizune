@@ -2,6 +2,14 @@
 
 ## Non publié
 
+## [0.5.1] — 2026-11-06 — Journaux par équipement
+
+- Journaux par équipement : la ligne d'en-tête indique comment le dernier
+  contrôle s'est terminé (réussi, en échec, en cours, en attente) avec le dernier
+  contrôle réussi ; en cas d'échec elle est mise en évidence et les sources non
+  lues sont marquées « Non vérifié ». Nécessite l'Agent qui fournit
+  `logs.last_check` ; avec un Agent plus ancien, l'ancien libellé est conservé.
+
 - Avec Agent 1.48.0, la tuile Synchro AdGuard affiche l’âge du dernier cycle
   réussi lorsque la synchronisation est saine ; les messages de défaut restent
   prioritaires. Tests et documentation actualisés, PWA 0.5.0 inchangée.
