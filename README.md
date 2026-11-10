@@ -66,6 +66,12 @@ demandes Tsunade, activité bornée et réponses structurées. Elle ne doit jama
 recevoir de journaux complets, de contrats
 d’administration, de secrets Agent/Vision ou d’accès direct aux équipements.
 
+Une exception, décidée par l’utilisateur le 10 novembre 2026 : Shizune peut
+vérifier et lancer la mise à jour du système d’INFRA-01. Elle n’envoie aucun
+paramètre ; Agent applique les mêmes refus que depuis Vision et confie le
+travail aux assistants de l’Installer, sans jamais redémarrer la machine. Voir
+[la PWA](docs/PWA.md#mise-à-jour-dinfra-01).
+
 Le déploiement HTTP suppose explicitement un réseau de confiance : Wi-Fi
 domestique ou accès WireGuard. Le jeton compagnon n’est pas chiffré par le
 navigateur au repos ; il reste révocable depuis Vision et n’est jamais placé

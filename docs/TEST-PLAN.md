@@ -64,7 +64,12 @@ jeton, chargement de la synthèse, puis réponse structurée à une demande.
   cours » tant qu'aucun résultat, demande expirée ou disparue ;
 - passerelle ou Agent indisponible : « Connexion indisponible » avec l'heure de
   la dernière synchronisation réussie, puis reprise par « Réessayer » ;
-- Vision sans `/requests/recent` : l'essentiel reste utilisable.
+- Vision sans `/requests/recent` : l'essentiel reste utilisable ;
+- « Mise à jour d'INFRA-01 » : listes périmées (vérification seule), paquets en
+  attente (confirmation avant la demande, « Annuler » sans effet), opération en
+  cours (avancement, aucun bouton), système à jour, assistants absents, refus de
+  l'Agent affiché, Vision ou Agent sans la route (lecture impossible, le reste
+  utilisable). Scénario Sandbox `shizune-system-update`.
 
 Validation locale effectuée sur les fichiers réels avec des données de démonstration :
 vue desktop, largeur 390 px et refus d’une demande sans session. Les tests Agent

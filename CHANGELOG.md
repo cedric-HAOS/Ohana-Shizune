@@ -3,6 +3,7 @@
 ## Non publié
 
 - Service worker : le cache s'appelait encore `shizune-pwa-0.5.0` alors que la 0.5.1 est publiée. Servie en HTTPS, une PWA installée aurait gardé l'ancien `app.js` après une mise à jour (sans effet en HTTP, où le service worker n'est pas enregistré). Le nom suit maintenant la version : l'outil de release le met à jour et un test le compare à `version.json`.
+- Mise à jour d'INFRA-01 : le bouton « Mise à jour d'INFRA-01 » de l'accueil ouvre l'état des mises à jour du système (verdict, paquets en attente dont sécurité, âge des listes, redémarrage requis, avancement). « Vérifier maintenant » actualise les listes de paquets ; « Mettre à jour » installe après une confirmation, seulement si des paquets attendent et que les listes sont à jour. La liste des paquets reste dans Vision et INFRA-01 n'est jamais redémarré. Nécessite l'Agent et la Vision qui relaient `/api/shizune/system/updates` ; avec des versions plus anciennes, l'écran indique que la lecture est impossible.
 
 ## [0.5.1] — 2026-11-06 — Journaux par équipement
 
