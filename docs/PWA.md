@@ -46,6 +46,30 @@ synchronisation remplace la page par « Connexion indisponible » et l’heure d
 dernière synchronisation réussie. Les réponses restent limitées aux choix fournis par Agent ; aucune
 commande libre, configuration ou donnée technique sensible n’est exposée.
 
+## Mise à jour d'INFRA-01
+
+Décision de l'utilisateur du 10 novembre 2026 : Shizune peut vérifier et lancer
+la mise à jour du système d'INFRA-01. C'est la seule opération système du
+compagnon.
+
+Le bouton « Mise à jour d'INFRA-01 » de l'accueil ouvre un écran lu à part de la
+synthèse (l'Agent simule apt, ce qui peut prendre jusqu'à 30 secondes). Il
+affiche le verdict de l'Agent, le nombre de paquets en attente et de correctifs
+de sécurité, l'âge des listes de paquets, un redémarrage requis et l'avancement
+des assistants. La liste des paquets reste dans Vision.
+
+- « Vérifier maintenant » demande l'actualisation des listes de paquets.
+- « Mettre à jour » n'est proposé que si des paquets attendent et que les listes
+  sont à jour ; il demande une confirmation avant d'envoyer la demande.
+- Pendant une opération, les boutons disparaissent et l'état est relu toutes les
+  5 secondes.
+
+Shizune n'envoie aucun paramètre : l'Agent applique les mêmes refus que depuis
+Vision et confie le travail aux assistants root de l'Installer. INFRA-01 n'est
+jamais redémarré. Nécessite un Agent et une Vision qui publient
+`/api/shizune/system/updates` ; sans eux, l'écran dit que la lecture est
+impossible et le reste de Shizune fonctionne.
+
 ## Déploiement futur
 
 Le déploiement retenu sert Vision et Shizune en HTTP, exclusivement sur le

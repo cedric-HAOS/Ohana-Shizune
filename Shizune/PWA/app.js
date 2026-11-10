@@ -7,6 +7,7 @@ const state = {
   view: 'home', deviceId: null, token: null, pairing: null,
   summary: null, requests: [], recent: [], activity: [], loading: true, error: null,
   incidentId: null, notice: null, busy: false, lastSyncAt: null,
+  system: null, systemError: null, systemConfirm: false, systemFollowUntil: 0,
 };
 
 const escapeHtml = value => String(value ?? '')
@@ -222,6 +223,46 @@ const preventiveCard = preventive => {
   </section>`;
 };
 
+// INFRA-01 system updates: the Agent's verdict and the two requests it accepts.
+const SYSTEM_MARK = { up_to_date: 'ok', updates_available: 'watch', security_updates: 'attention', reboot_required: 'attention', stale_lists: 'unknown' };
+const HELPER_LABEL = { refresh: 'Actualisation des listes', upgrade: 'Installation des mises à jour' };
+
+const systemRunning = system => ['refresh', 'upgrade'].some(action => system?.helper?.[action]?.state === 'running');
+
+const helperLines = helper => ['refresh', 'upgrade'].map(action => {
+  const run = helper?.[action];
+  const at = value => formatDate(value).replace(/,?\s+/, ' à ');
+  if (run?.state === 'running') return `<p class="block-sub">${HELPER_LABEL[action]} en cours depuis ${at(run.started_at)}…</p>`;
+  if (run?.state === 'succeeded') return `<p class="block-sub">${HELPER_LABEL[action]} : réussie le ${at(run.finished_at)}</p>`;
+  if (run?.state === 'failed') return `<p class="block-sub urgent">${HELPER_LABEL[action]} : en échec le ${at(run.finished_at)}</p>`;
+  return '';
+}).join('');
+
+const systemActions = (system, confirming) => {
+  if (system.helper?.installed !== true) return '<p class="hint">Les assistants de mise à jour ne sont pas installés sur INFRA-01 : la mise à jour ne peut pas être lancée d’ici.</p>';
+  if (systemRunning(system)) return '<p class="hint">Une opération est en cours : l’état se met à jour tout seul.</p>';
+  const count = countLabel(system.pending_count ?? 0, 'mise à jour', 'mises à jour');
+  if (confirming) return `<p><strong>Installer ${count} sur INFRA-01 ?</strong></p><p class="hint">Les paquets déjà installés sont mis à jour. INFRA-01 n’est jamais redémarré.</p><div class="actions"><button class="blue" data-action="system-apply">Confirmer</button><button data-action="system-cancel">Annuler</button></div>`;
+  const canApply = (system.pending_count ?? 0) > 0 && !system.lists_stale;
+  return `<div class="actions"><button data-action="system-refresh">Vérifier maintenant</button>${canApply ? '<button class="blue" data-action="system-confirm">Mettre à jour</button>' : ''}</div>${system.lists_stale ? '<p class="hint">Les listes sont périmées : vérifier d’abord, la mise à jour sera proposée ensuite.</p>' : ''}`;
+};
+
+const systemCard = (system, {error = null, confirming = false} = {}) => {
+  const back = '<button class="inline-secondary" data-action="home">← L’essentiel</button>';
+  if (!system) return `${back}<section class="section${error ? ' error' : ''}"><h2 class="section-title">Mise à jour d’INFRA-01</h2>${error ? `<p>Lecture impossible : ${escapeHtml(error)}</p><button class="inline-primary" data-action="system">Réessayer</button>` : '<div class="empty">Lecture de l’état des mises à jour… Cela peut prendre jusqu’à 30 secondes.</div>'}</section>`;
+  const details = [];
+  if (system.pending_count) details.push(`${countLabel(system.pending_count, 'paquet', 'paquets')} en attente, dont ${system.security_count ?? 0} de sécurité`);
+  details.push(system.lists_refreshed_at ? `Listes de paquets actualisées ${ageLabel(system.lists_refreshed_at)}` : 'Listes de paquets jamais actualisées');
+  if (system.kernel_pending) details.push('Un nouveau noyau sera installé : il demandera un redémarrage manuel');
+  if (system.reboot_required) details.push('Redémarrage requis : à faire à la main, Ohana ne redémarre jamais INFRA-01');
+  return `${back}<section class="section"><div class="block-title"><h2>Mise à jour d’INFRA-01</h2>${system.read_at ? `<small>${ageLabel(system.read_at)}</small>` : ''}</div>
+    <div class="log-row">${mark(SYSTEM_MARK[system.status] ?? 'unknown')}<span class="tx"><strong>${escapeHtml(system.message ?? 'État inconnu')}</strong>${details.map(line => `<small>${escapeHtml(line)}</small>`).join('')}</span></div>
+    ${helperLines(system.helper)}${error ? `<p class="block-sub urgent">Dernière lecture impossible : ${escapeHtml(error)}</p>` : ''}
+    ${systemActions(system, confirming)}
+    <p class="hint">La liste des paquets est dans Vision, page « Mise à jour système ».</p>
+  </section>`;
+};
+
 const connectionRequired = () => `<section class="section"><h2 class="section-title">Connexion à Konoha</h2><div class="empty">Shizune doit être associée à Tsunade avant d’afficher l’état réel.<br><button class="inline-primary" data-action="pair">Associer cet iPhone</button></div></section>`;
 
 const home = () => {
@@ -235,6 +276,7 @@ const home = () => {
     ${preventiveCard(summary.preventive)}
     ${summary.attention_truncated ? '<p class="hint">Les incidents prioritaires sont présentés ici. Le dossier complet est disponible dans Vision.</p>' : ''}
     <button class="inline-secondary" data-action="incidents">Voir tous les sujets suivis →</button>
+    <button class="inline-secondary" data-action="system">Mise à jour d’INFRA-01 →</button>
     <button class="inline-secondary" data-action="refresh">Actualiser</button>`;
 };
 
@@ -286,12 +328,13 @@ const render = () => {
   if (state.view === 'home') app.innerHTML = home();
   else if (state.view === 'incident') app.innerHTML = state.token ? incidentDetail() : connectionRequired();
   else if (state.view === 'incidents') app.innerHTML = state.token ? `<button class="inline-secondary" data-action="home">← L’essentiel</button><section class="section"><h2 class="section-title">Les sujets suivis</h2>${(state.summary?.attention ?? []).map(item => incidentCard(item)).join('')}</section>` : connectionRequired();
+  else if (state.view === 'system') app.innerHTML = state.token ? systemCard(state.system, {error: state.systemError, confirming: state.systemConfirm}) : connectionRequired();
   else if (state.view === 'activity') app.innerHTML = state.token ? `<section class="section"><h2 class="section-title">Activité récente</h2><div class="activity-list">${activityRows(state.activity)}</div></section>` : connectionRequired();
   else if (state.view === 'decisions') app.innerHTML = state.token ? `${state.requests.length ? state.requests.map(requestCard).join('') : '<section class="section decision"><h2 class="section-title">Aucune autorisation en attente</h2><p>Aucune action ne demande actuellement votre accord. Les incidents suivis restent accessibles dans l’essentiel.</p><button class="inline-secondary" data-action="home">Voir les incidents</button></section>'}${recentDecisions()}` : connectionRequired();
   else app.innerHTML = profile();
   if (state.notice) app.insertAdjacentHTML('afterbegin', `<p class="diagnosis-notice" role="status">${escapeHtml(state.notice)}</p>`);
   document.querySelectorAll('.nav-item').forEach(item => {
-    const selected = item.dataset.view === (['incident', 'incidents'].includes(state.view) ? 'home' : state.view);
+    const selected = item.dataset.view === (['incident', 'incidents', 'system'].includes(state.view) ? 'home' : state.view);
     item.classList.toggle('active', selected);
     item.setAttribute('aria-current', selected ? 'page' : 'false');
   });
@@ -323,6 +366,38 @@ const refresh = async ({quiet = false} = {}) => {
     state.loading = false;
     render();
   }
+};
+
+// Read apart from the dashboard: the Agent simulates apt, which is slow.
+const loadSystem = async () => {
+  const wasRunning = systemRunning(state.system);
+  try {
+    state.system = await apiRequest('/system/updates');
+    state.systemError = null;
+    // The operation is over: its announcement is no longer true.
+    if (wasRunning && !systemRunning(state.system)) { state.notice = null; state.systemFollowUntil = 0; }
+  } catch (error) {
+    state.systemError = error.message;
+  }
+  if (state.view === 'system') render();
+};
+
+const requestSystem = async (button, action) => {
+  state.busy = true;
+  button.disabled = true;
+  state.systemConfirm = false;
+  try {
+    const result = await apiRequest(`/system/updates/${action}`, {method: 'POST', body: {}});
+    state.notice = result.busy ? 'Une opération est déjà en cours sur INFRA-01.'
+      : action === 'apply' ? 'Mise à jour demandée. L’avancement s’affiche ici.' : 'Vérification demandée. L’état sera relu dans un instant.';
+  } catch (error) {
+    state.notice = `Demande refusée : ${error.message}`;
+  } finally {
+    state.busy = false;
+  }
+  // Follow the request for a minute even before the helper reports running.
+  state.systemFollowUntil = Date.now() + 60000;
+  render();
 };
 
 const startPairing = async () => {
@@ -394,6 +469,16 @@ document.querySelector('#app').addEventListener('click', async event => {
   else if (['home', 'decisions', 'incidents'].includes(button.dataset.action)) {
     state.view = button.dataset.action; state.notice = null; render();
   }
+  else if (button.dataset.action === 'system') {
+    state.view = 'system'; state.notice = null; state.systemConfirm = false; state.systemError = null;
+    render();
+    await loadSystem();
+  }
+  else if (['system-confirm', 'system-cancel'].includes(button.dataset.action)) {
+    state.systemConfirm = button.dataset.action === 'system-confirm'; state.notice = null; render();
+  }
+  else if (button.dataset.action === 'system-refresh') await requestSystem(button, 'refresh');
+  else if (button.dataset.action === 'system-apply') await requestSystem(button, 'apply');
   else if (button.dataset.action === 'diagnose') {
     state.busy = true;
     button.disabled = true;
@@ -412,6 +497,7 @@ document.querySelector('#app').addEventListener('click', async event => {
     await vaultDelete('companion-token');
     state.token = null;
     state.summary = null;
+    state.system = null;
     state.requests = [];
     state.recent = [];
     state.activity = [];
@@ -437,6 +523,11 @@ void initialize();
 setInterval(() => {
   if (state.token && !document.hidden && !state.loading && !state.busy && state.view !== 'profile') void refresh({quiet: true});
 }, 30000);
+// While a helper runs, and for a minute after a request, follow it more closely.
+setInterval(() => {
+  if (state.token && state.view === 'system' && !document.hidden && !state.busy && !state.systemConfirm
+    && (systemRunning(state.system) || Date.now() < state.systemFollowUntil)) void loadSystem();
+}, 5000);
 if (window.isSecureContext && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
