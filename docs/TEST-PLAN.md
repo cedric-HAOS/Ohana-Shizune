@@ -6,7 +6,8 @@ Depuis la racine du dépôt :
 
 ```powershell
 node --check Shizune/PWA/app.js
-node --test tests/essential-services.test.mjs
+node --check Shizune/PWA/sw.js
+node --test "tests/*.test.mjs"
 git diff --check
 python -m http.server 8000 --bind 127.0.0.1 --directory Shizune/PWA
 ```

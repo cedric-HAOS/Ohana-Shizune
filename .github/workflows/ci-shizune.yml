@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests de la PWA (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Syntaxe de la PWA
+        run: |
+          node --check Shizune/PWA/app.js
+          node --check Shizune/PWA/sw.js
+
+      - name: node --test
+        run: node --test "tests/*.test.mjs"
+
+  commits:
+    name: Messages de commit
+    uses: cedric-HAOS/Ohana-Platform/.github/workflows/commit-messages.yml@main
